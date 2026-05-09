@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Secure Chat</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#ece5dd;
+overflow:hidden;
+}
+
+.main{
+display:flex;
+height:100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:30%;
+background:white;
+overflow:auto;
+border-right:1px solid #ccc;
+}
+
+.user{
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:12px;
+cursor:pointer;
+border-bottom:1px solid #eee;
+}
+
+.user-left{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.avatar{
+width:40px;
+height:40px;
+border-radius:50%;
+background:#075e54;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+overflow:hidden;
+}
+
+.avatar img{
+width:100%;
+height:100%;
+object-fit:cover;
+}
+
+/* CHAT */
+
+.chat-area{
+width:70%;
+display:flex;
+flex-direction:column;
+}
+
+.chat-header{
+background:#075e54;
+color:white;
+padding:10px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+}
+
+.header-left{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.chat-box{
+flex:1;
+overflow:auto;
+padding:10px;
+}
+
+/* MESSAGE */
+
+.message{
+max-width:60%;
+padding:8px;
+margin:5px;
+border-radius:8px;
+position:relative;
+word-wrap:break-word;
+}
+
+.left{
+background:white;
+}
+
+.right{
+background:#dcf8c6;
+margin-left:auto;
+}
+
+.time{
+font-size:10px;
+color:gray;
+margin-top:4px;
+}
+
+/* REPLY */
+
+.reply-box{
+background:rgba(0,0,0,0.08);
+padding:5px;
+border-left:4px solid #075e54;
+margin-bottom:5px;
+font-size:13px;
+}
+
+/* INPUT */
+
+.input{
+display:flex;
+padding:10px;
+background:#f0f0f0;
+align-items:center;
+gap:5px;
+}
+
+input[type=text]{
+flex:1;
+padding:10px;
+border:none;
+border-radius:20px;
+outline:none;
+}
+
+button{
+padding:10px;
+border:none;
+background:#075e54;
+color:white;
+border-radius:50%;
+cursor:pointer;
+}
+
+/* MENU */
+
+.menu{
+position:absolute;
+background:white;
+border:1px solid #ccc;
+display:none;
+z-index:1000;
+box-shadow:0 2px 5px rgba(0,0,0,0.3);
+}
+
+.menu div{
+padding:10px;
+cursor:pointer;
+}
+
+.menu div:hover{
+background:#eee;
+}
+
+/* IMAGE */
+
+.chat-img{
+max-width:200px;
+border-radius:10px;
+}
+
+/* AUDIO */
+
+audio{
+width:220px;
+margin-top:5px;
+}
+
+/* EMOJI */
+
+.emoji-bar{
+padding:5px;
+background:white;
+}
+
+.reply-preview{
+background:#d9fdd3;
+padding:6px;
+border-left:4px solid green;
+margin:5px;
+display:none;
+}
+
+/* VIDEO CALL */
+
+#videoModal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.9);
+z-index:9999;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
+
+#localVideo{
+width:70%;
+max-width:700px;
+border-radius:15px;
+background:black;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="main">
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+{% for u in users %}
+{% if u[0] != user %}
+
+<div class="user" onclick="selectUser('{{u[0]}}')">
+
+<div class="user-left">
+
+<div class="avatar">
+
+{% if u[1] %}
+<img src="/static/profile_pics/{{u[1]}}">
+{% else %}
+{{u[0][0].upper()}}
+{% endif %}
+
+</div>
+
+<span>{{u[0]}}</span>
+
+</div>
+
+<span id="status-{{u[0]}}">
+offline
+</span>
+
+</div>
+
+{% endif %}
+{% endfor %}
+
+</div>
+
+<!-- CHAT AREA -->
+
+<div class="chat-area">
+
+<!-- HEADER -->
+
+<div class="chat-header">
+
+<div class="header-left">
+
+<div class="avatar">
+
+{% if mypic %}
+<img src="/static/profile_pics/{{mypic}}">
+{% else %}
+{{user[0].upper()}}
+{% endif %}
+
+</div>
+
+<div>
+
+<div id="chat-user">
+Select user
+</div>
+
+<div id="chat-status"></div>
+
+</div>
+
+</div>
+
+<div style="display:flex;align-items:center;gap:10px;">
+
+<button onclick="startVideoCall()"
+style="
+background:white;
+color:#075e54;
+width:40px;
+height:40px;
+font-size:18px;
+">
+📹
+</button>
+
+<a href="/logout" style="color:white">
+Logout
+</a>
+
+</div>
+
+</div>
+
+<!-- CHAT -->
+
+<div id="chat-box" class="chat-box"></div>
+
+<!-- REPLY -->
+
+<div class="reply-preview" id="reply-preview">
+
+Replying to:
+<span id="reply-text"></span>
+
+<button onclick="cancelReply()">X</button>
+
+</div>
+
+<!-- EMOJIS -->
+
+<div class="emoji-bar">
+
+<button onclick="addEmoji('😀')">😀</button>
+<button onclick="addEmoji('😂')">😂</button>
+<button onclick="addEmoji('❤️')">❤️</button>
+<button onclick="addEmoji('👍')">👍</button>
+
+</div>
+
+<!-- INPUT -->
+
+<div class="input">
+
+<input type="text" id="msg" placeholder="Type message">
+
+<input type="file" id="file">
+
+<button onclick="startRecording()">🎤</button>
+
+<button onclick="send()">➤</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- MENU -->
+
+<div id="menu" class="menu">
+
+<div onclick="replyMsg()">Reply</div>
+
+<div onclick="editMsg()">Edit</div>
+
+<div onclick="deleteMsg()">Delete</div>
+
+</div>
+
+<!-- VIDEO CALL -->
+
+<div id="videoModal">
+
+<h2 style="color:white;">
+Video Call
+</h2>
+
+<video
+id="localVideo"
+autoplay
+muted
+playsinline>
+</video>
+
+<button
+onclick="endVideoCall()"
+style="
+margin-top:20px;
+padding:15px;
+background:red;
+border:none;
+color:white;
+border-radius:50px;
+font-size:18px;
+cursor:pointer;
+">
+End Call
+</button>
+
+</div>
+
+<script>
+
+var socket = io();
+
+var currentUser = "{{user}}";
+
+var selectedUser = "";
+
+var chatKey = "";
+
+var currentMsgId = null;
+
+var currentMsgText = "";
+
+var replyText = "";
+
+var mediaRecorder;
+
+var audioChunks = [];
+
+var localStream;
+
+/* ENTER SEND */
+
+document.getElementById("msg")
+.addEventListener("keydown",function(e){
+
+if(e.key==="Enter"){
+e.preventDefault();
+send();
+}
+
+});
+
+/* EMOJI */
+
+function addEmoji(e){
+
+let input=document.getElementById("msg");
+
+input.value += e;
+
+input.focus();
+
+}
+
+/* SELECT USER */
+
+function selectUser(user){
+
+selectedUser=user;
+
+document.getElementById("chat-user").innerText=user;
+
+fetch('/get_key/'+user)
+.then(r=>r.json())
+.then(d=>{
+
+chatKey=d.key;
+
+loadMessages();
+
+});
+
+}
+
+/* DECRYPT */
+
+function decrypt(msg){
+
+try{
+
+return CryptoJS.AES.decrypt(msg,chatKey)
+.toString(CryptoJS.enc.Utf8) || msg;
+
+}catch{
+
+return msg;
+
+}
+
+}
+
+/* LOAD MESSAGES */
+
+function loadMessages(){
+
+if(!selectedUser) return;
+
+fetch('/get_messages/'+selectedUser)
+.then(r=>r.json())
+.then(data=>{
+
+let box=document.getElementById("chat-box");
+
+box.innerHTML="";
+
+data.messages.forEach(m=>{
+
+let id=m[0];
+let sender=m[1];
+let msg=m[2];
+let status=m[3];
+let time=m[4];
+let type=m[5];
+let reply=m[6];
+
+let div=document.createElement("div");
+
+div.classList.add("message");
+
+if(sender===currentUser){
+div.classList.add("right");
+}else{
+div.classList.add("left");
+}
+
+let tick=(status==="seen")?"✔✔":"✔";
+
+let html="";
+
+if(reply){
+
+html += `
+<div class="reply-box">
+${reply}
+</div>
+`;
+
+}
+
+if(type==="image"){
+
+html += `
+<img class="chat-img"
+src="/static/chat_images/${msg}">
+`;
+
+}
+else if(type==="voice"){
+
+html += `
+<audio controls>
+<source src="/static/voice_notes/${msg}">
+</audio>
+`;
+
+}
+else{
+
+html += decrypt(msg);
+
+}
+
+html += `
+<div class="time">
+${time}
+${sender===currentUser ? tick : ""}
+</div>
+`;
+
+div.innerHTML=html;
+
+/* RIGHT CLICK */
+
+div.oncontextmenu=(e)=>{
+
+if(sender===currentUser){
+
+e.preventDefault();
+
+showMenu(e,id,decrypt(msg));
+
+}
+
+};
+
+box.appendChild(div);
+
+if(sender!==currentUser && status!=="seen"){
+
+socket.emit("seen",{id:id});
+
+}
+
+});
+
+box.scrollTop=box.scrollHeight;
+
+});
+
+}
+
+/* MENU */
+
+function showMenu(e,id,text){
+
+let menu=document.getElementById("menu");
+
+menu.style.display="block";
+
+menu.style.left=e.pageX+"px";
+
+menu.style.top=e.pageY+"px";
+
+currentMsgId=id;
+
+currentMsgText=text;
+
+}
+
+document.addEventListener("click",()=>{
+
+document.getElementById("menu").style.display="none";
+
+});
+
+/* REPLY */
+
+function replyMsg(){
+
+replyText=currentMsgText;
+
+document.getElementById("reply-preview")
+.style.display="block";
+
+document.getElementById("reply-text")
+.innerText=currentMsgText;
+
+}
+
+function cancelReply(){
+
+replyText="";
+
+document.getElementById("reply-preview")
+.style.display="none";
+
+}
+
+/* EDIT */
+
+function editMsg(){
+
+let nt=prompt("Edit message:",currentMsgText);
+
+if(nt){
+
+fetch('/edit_message/'+currentMsgId,{
+
+method:"POST",
+
+headers:{
+'Content-Type':'application/json'
+},
+
+body:JSON.stringify({
+message:nt
+})
+
+}).then(loadMessages);
+
+}
+
+}
+
+/* DELETE */
+
+function deleteMsg(){
+
+if(confirm("Delete message?")){
+
+fetch('/delete_message/'+currentMsgId,{
+method:"POST"
+}).then(loadMessages);
+
+}
+
+}
+
+/* SEND */
+
+function send(){
+
+if(!selectedUser){
+
+alert("Select user first");
+
+return;
+
+}
+
+let msg=document.getElementById("msg").value;
+
+let file=document.getElementById("file").files[0];
+
+if(file){
+
+let f=new FormData();
+
+f.append("file",file);
+
+fetch('/upload_image',{
+method:'POST',
+body:f
+})
+
+.then(r=>r.json())
+.then(d=>{
+
+socket.emit("private_message",{
+
+msg:d.filename,
+to:selectedUser,
+type:"image",
+reply:replyText
+
+});
+
+loadMessages();
+
+});
+
+document.getElementById("file").value="";
+
+}
+else if(msg){
+
+let enc=CryptoJS.AES.encrypt(msg,chatKey)
+.toString();
+
+socket.emit("private_message",{
+
+msg:enc,
+to:selectedUser,
+type:"text",
+reply:replyText
+
+});
+
+document.getElementById("msg").value="";
+
+loadMessages();
+
+}
+
+cancelReply();
+
+}
+
+/* VOICE */
+
+async function startRecording(){
+
+if(!selectedUser){
+
+alert("Select user first");
+
+return;
+
+}
+
+let stream = await navigator.mediaDevices.getUserMedia({
+audio:true
+});
+
+mediaRecorder = new MediaRecorder(stream);
+
+mediaRecorder.start();
+
+audioChunks=[];
+
+mediaRecorder.ondataavailable = e=>{
+audioChunks.push(e.data);
+};
+
+mediaRecorder.onstop = async ()=>{
+
+let blob = new Blob(audioChunks,{
+type:'audio/webm'
+});
+
+let fd = new FormData();
+
+fd.append("audio",blob);
+
+let r = await fetch('/upload_voice',{
+method:'POST',
+body:fd
+});
+
+let d = await r.json();
+
+socket.emit("private_message",{
+
+msg:d.filename,
+to:selectedUser,
+type:"voice",
+reply:replyText
+
+});
+
+loadMessages();
+
+};
+
+setTimeout(()=>{
+mediaRecorder.stop();
+},5000);
+
+}
+
+/* VIDEO CALL */
+
+async function startVideoCall(){
+
+try{
+
+localStream = await navigator.mediaDevices.getUserMedia({
+
+video:true,
+audio:true
+
+});
+
+document.getElementById("videoModal")
+.style.display="flex";
+
+document.getElementById("localVideo")
+.srcObject = localStream;
+
+}catch(err){
+
+alert("Camera or microphone access denied");
+
+}
+
+}
+
+function endVideoCall(){
+
+document.getElementById("videoModal")
+.style.display="none";
+
+if(localStream){
+
+localStream.getTracks().forEach(track=>{
+
+track.stop();
+
+});
+
+}
+
+}
+
+/* SOCKET */
+
+socket.on("message",loadMessages);
+
+/* STATUS */
+
+socket.on("status",data=>{
+
+let online=data.online;
+
+let last=data.last_seen;
+
+document.querySelectorAll("[id^=status-]")
+.forEach(el=>{
+
+let user=el.id.replace("status-","");
+
+if(online.includes(user)){
+
+el.innerText="🟢 online";
+
+}else if(last[user]){
+
+el.innerText="last seen "+last[user];
+
+}
+
+});
+
+if(selectedUser){
+
+let el=document.getElementById("chat-status");
+
+if(online.includes(selectedUser)){
+
+el.innerText="🟢 online";
+
+}else if(last[selectedUser]){
+
+el.innerText="last seen "+last[selectedUser];
+
+}
+
+}
+
+});
+
+socket.emit("join",{username:currentUser});
+
+</script>
+
+</body>
+</html>
