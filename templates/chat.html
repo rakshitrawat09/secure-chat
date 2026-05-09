@@ -4,6 +4,9 @@
 
 <title>Secure Chat</title>
 
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
@@ -14,6 +17,8 @@ margin:0;
 font-family:Arial;
 background:#ece5dd;
 overflow:hidden;
+height:100vh;
+width:100vw;
 }
 
 .main{
@@ -70,6 +75,7 @@ object-fit:cover;
 width:70%;
 display:flex;
 flex-direction:column;
+height:100vh;
 }
 
 .chat-header{
@@ -89,8 +95,10 @@ gap:10px;
 
 .chat-box{
 flex:1;
-overflow:auto;
+overflow-y:auto;
 padding:10px;
+padding-bottom:120px;
+scroll-behavior:smooth;
 }
 
 /* MESSAGE */
@@ -102,6 +110,7 @@ margin:5px;
 border-radius:8px;
 position:relative;
 word-wrap:break-word;
+font-size:15px;
 }
 
 .left{
@@ -137,11 +146,16 @@ padding:10px;
 background:#f0f0f0;
 align-items:center;
 gap:5px;
+position:sticky;
+bottom:0;
+width:100%;
+box-sizing:border-box;
 }
 
 input[type=text]{
 flex:1;
-padding:10px;
+padding:14px;
+font-size:16px;
 border:none;
 border-radius:20px;
 outline:none;
@@ -154,6 +168,7 @@ background:#075e54;
 color:white;
 border-radius:50%;
 cursor:pointer;
+font-size:16px;
 }
 
 /* MENU */
@@ -195,6 +210,8 @@ margin-top:5px;
 .emoji-bar{
 padding:5px;
 background:white;
+overflow-x:auto;
+white-space:nowrap;
 }
 
 .reply-preview{
@@ -226,6 +243,54 @@ width:70%;
 max-width:700px;
 border-radius:15px;
 background:black;
+}
+
+/* MOBILE */
+
+@media screen and (max-width:768px){
+
+.sidebar{
+width:35%;
+}
+
+.chat-area{
+width:65%;
+}
+
+.message{
+max-width:85%;
+font-size:15px;
+}
+
+.chat-header{
+padding:8px;
+font-size:14px;
+}
+
+.avatar{
+width:35px;
+height:35px;
+font-size:14px;
+}
+
+button{
+padding:10px;
+font-size:16px;
+}
+
+.user{
+padding:8px;
+font-size:14px;
+}
+
+#localVideo{
+width:95%;
+}
+
+input[type=text]{
+font-size:16px;
+}
+
 }
 
 </style>
@@ -276,8 +341,6 @@ offline
 
 <div class="chat-area">
 
-<!-- HEADER -->
-
 <div class="chat-header">
 
 <div class="header-left">
@@ -287,7 +350,7 @@ offline
 {% if mypic %}
 <img src="/static/profile_pics/{{mypic}}">
 {% else %}
-{{user[0].upper()}}
+{{user[0][0].upper()}}
 {% endif %}
 
 </div>
@@ -325,11 +388,7 @@ Logout
 
 </div>
 
-<!-- CHAT -->
-
 <div id="chat-box" class="chat-box"></div>
-
-<!-- REPLY -->
 
 <div class="reply-preview" id="reply-preview">
 
@@ -340,8 +399,6 @@ Replying to:
 
 </div>
 
-<!-- EMOJIS -->
-
 <div class="emoji-bar">
 
 <button onclick="addEmoji('😀')">😀</button>
@@ -350,8 +407,6 @@ Replying to:
 <button onclick="addEmoji('👍')">👍</button>
 
 </div>
-
-<!-- INPUT -->
 
 <div class="input">
 
@@ -381,13 +436,11 @@ Replying to:
 
 </div>
 
-<!-- VIDEO CALL -->
+<!-- VIDEO -->
 
 <div id="videoModal">
 
-<h2 style="color:white;">
-Video Call
-</h2>
+<h2 style="color:white;">Video Call</h2>
 
 <video
 id="localVideo"
@@ -496,7 +549,7 @@ return msg;
 
 }
 
-/* LOAD MESSAGES */
+/* LOAD */
 
 function loadMessages(){
 
@@ -575,8 +628,6 @@ ${sender===currentUser ? tick : ""}
 `;
 
 div.innerHTML=html;
-
-/* RIGHT CLICK */
 
 div.oncontextmenu=(e)=>{
 
@@ -825,7 +876,7 @@ mediaRecorder.stop();
 
 }
 
-/* VIDEO CALL */
+/* VIDEO */
 
 async function startVideoCall(){
 
@@ -872,8 +923,6 @@ track.stop();
 /* SOCKET */
 
 socket.on("message",loadMessages);
-
-/* STATUS */
 
 socket.on("status",data=>{
 
