@@ -19,8 +19,6 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 
 <div class="main">
 
-<!-- SIDEBAR -->
-
 <div class="sidebar">
 
 {% for u in users %}
@@ -45,8 +43,7 @@ onclick="selectUser('{{u[0]}}')">
 
 <div>{{u[0]}}</div>
 
-<div
-style="font-size:11px;color:gray;"
+<div style="font-size:11px;color:gray;"
 id="status-{{u[0]}}">
 offline
 </div>
@@ -62,11 +59,7 @@ offline
 
 </div>
 
-<!-- CHAT AREA -->
-
 <div class="chat-area">
-
-<!-- HEADER -->
 
 <div class="chat-header">
 
@@ -77,7 +70,7 @@ offline
 {% if mypic %}
 <img src="/static/profile_pics/{{mypic}}">
 {% else %}
-{{user[0].upper()}}
+{{user[0][0].upper()}}
 {% endif %}
 
 </div>
@@ -90,19 +83,15 @@ Select User
 </div>
 
 <div class="header-status"
-id="chat-status">
-</div>
+id="chat-status"></div>
 
 </div>
 
 </div>
 
-<div
-style="display:flex;align-items:center;gap:10px;">
+<div style="display:flex;gap:10px;align-items:center;">
 
-<button onclick="startVideoCall()">
-📹
-</button>
+<button onclick="startVideoCall()">📹</button>
 
 <a href="/logout"
 style="color:white;text-decoration:none;">
@@ -113,17 +102,10 @@ Logout
 
 </div>
 
-<!-- CHAT -->
-
 <div id="chat-box"
-class="chat-box">
-</div>
-
-<!-- BOTTOM -->
+class="chat-box"></div>
 
 <div class="bottom-area">
-
-<!-- REPLY -->
 
 <div class="reply-preview"
 id="reply-preview">
@@ -131,19 +113,12 @@ id="reply-preview">
 Replying to:
 <span id="reply-text"></span>
 
-<button
-onclick="cancelReply()"
-style="
-width:28px;
-height:28px;
-font-size:12px;
-">
+<button onclick="cancelReply()"
+style="width:28px;height:28px;font-size:12px;">
 X
 </button>
 
 </div>
-
-<!-- EMOJI -->
 
 <div class="emoji-bar">
 
@@ -153,8 +128,6 @@ X
 <button onclick="addEmoji('👍')">👍</button>
 
 </div>
-
-<!-- INPUT -->
 
 <div class="input">
 
@@ -169,13 +142,9 @@ type="file"
 id="file"
 class="file-input">
 
-<button onclick="startRecording()">
-🎤
-</button>
+<button onclick="startRecording()">🎤</button>
 
-<button onclick="send()">
-➤
-</button>
+<button onclick="send()">➤</button>
 
 </div>
 
@@ -184,8 +153,6 @@ class="file-input">
 </div>
 
 </div>
-
-<!-- MENU -->
 
 <div id="menu" class="menu">
 
@@ -194,6 +161,25 @@ class="file-input">
 <div onclick="editMsg()">Edit</div>
 
 <div onclick="deleteMsg()">Delete</div>
+
+</div>
+
+<!-- IMAGE VIEWER -->
+
+<div id="imageViewer">
+
+<button onclick="closeImage()"
+class="close-image">
+✕
+</button>
+
+<img id="fullscreenImage">
+
+<a id="downloadImage"
+download
+class="download-image">
+⬇ Download Image
+</a>
 
 </div>
 
@@ -214,8 +200,7 @@ playsinline>
 
 <div class="video-controls">
 
-<button
-onclick="endVideoCall()"
+<button onclick="endVideoCall()"
 style="background:red;">
 ❌
 </button>
@@ -313,7 +298,7 @@ return msg;
 
 }
 
-/* LOAD MESSAGES */
+/* LOAD */
 
 function loadMessages(){
 
@@ -372,8 +357,22 @@ ${reply}
 if(type==="image"){
 
 html += `
-<img class="chat-img"
-src="/static/chat_images/${msg}">
+<div class="img-wrapper">
+
+<img
+class="chat-img"
+src="/static/chat_images/${msg}"
+onclick="openImage('/static/chat_images/${msg}')"
+>
+
+<a
+class="download-btn"
+href="/static/chat_images/${msg}"
+download>
+⬇ Download
+</a>
+
+</div>
 `;
 
 }
@@ -405,8 +404,6 @@ ${sender===currentUser ? tick : ""}
 
 div.innerHTML=html;
 
-/* RIGHT CLICK */
-
 div.oncontextmenu=(e)=>{
 
 if(sender===currentUser){
@@ -426,6 +423,28 @@ box.appendChild(div);
 box.scrollTop=box.scrollHeight;
 
 });
+
+}
+
+/* IMAGE VIEWER */
+
+function openImage(src){
+
+document.getElementById("imageViewer")
+.style.display="flex";
+
+document.getElementById("fullscreenImage")
+.src=src;
+
+document.getElementById("downloadImage")
+.href=src;
+
+}
+
+function closeImage(){
+
+document.getElementById("imageViewer")
+.style.display="none";
 
 }
 
