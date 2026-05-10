@@ -1,29 +1,41 @@
+# Replace `templates/chat.html` with this FULL updated code
+
+```html
 <!DOCTYPE html>
 <html>
 <head>
 
 <title>Secure Chat</title>
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <style>
 
-body{
+*{
 margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html,body{
+height:100%;
 font-family:Arial;
 background:#ece5dd;
 overflow:hidden;
-height:100vh;
+}
+
+body{
 width:100vw;
 }
 
 .main{
 display:flex;
 height:100vh;
+width:100vw;
+overflow:hidden;
 }
 
 /* SIDEBAR */
@@ -31,8 +43,8 @@ height:100vh;
 .sidebar{
 width:30%;
 background:white;
-overflow:auto;
-border-right:1px solid #ccc;
+border-right:1px solid #ddd;
+overflow-y:auto;
 }
 
 .user{
@@ -40,8 +52,8 @@ display:flex;
 align-items:center;
 justify-content:space-between;
 padding:12px;
-cursor:pointer;
 border-bottom:1px solid #eee;
+cursor:pointer;
 }
 
 .user-left{
@@ -51,8 +63,8 @@ gap:10px;
 }
 
 .avatar{
-width:40px;
-height:40px;
+width:42px;
+height:42px;
 border-radius:50%;
 background:#075e54;
 color:white;
@@ -61,6 +73,7 @@ align-items:center;
 justify-content:center;
 font-weight:bold;
 overflow:hidden;
+flex-shrink:0;
 }
 
 .avatar img{
@@ -69,13 +82,14 @@ height:100%;
 object-fit:cover;
 }
 
-/* CHAT */
+/* CHAT AREA */
 
 .chat-area{
 width:70%;
 display:flex;
 flex-direction:column;
 height:100vh;
+position:relative;
 }
 
 .chat-header{
@@ -85,6 +99,7 @@ padding:10px;
 display:flex;
 align-items:center;
 justify-content:space-between;
+min-height:70px;
 }
 
 .header-left{
@@ -93,82 +108,126 @@ align-items:center;
 gap:10px;
 }
 
+.header-user{
+font-size:16px;
+font-weight:bold;
+}
+
+.header-status{
+font-size:12px;
+opacity:0.9;
+}
+
 .chat-box{
 flex:1;
 overflow-y:auto;
-padding:10px;
-padding-bottom:120px;
+padding:12px;
+display:flex;
+flex-direction:column;
+gap:8px;
 scroll-behavior:smooth;
 }
 
-/* MESSAGE */
-
 .message{
-max-width:60%;
-padding:8px;
-margin:5px;
-border-radius:8px;
-position:relative;
+max-width:75%;
+padding:10px;
+border-radius:10px;
 word-wrap:break-word;
+position:relative;
 font-size:15px;
 }
 
 .left{
 background:white;
+align-self:flex-start;
 }
 
 .right{
 background:#dcf8c6;
-margin-left:auto;
+align-self:flex-end;
 }
 
 .time{
 font-size:10px;
 color:gray;
-margin-top:4px;
+margin-top:5px;
+text-align:right;
 }
 
-/* REPLY */
+.chat-img{
+max-width:220px;
+border-radius:10px;
+}
 
 .reply-box{
 background:rgba(0,0,0,0.08);
-padding:5px;
+padding:6px;
 border-left:4px solid #075e54;
 margin-bottom:5px;
-font-size:13px;
+font-size:12px;
+border-radius:4px;
 }
 
-/* INPUT */
+/* INPUT AREA */
+
+.bottom-area{
+background:#f0f0f0;
+padding-bottom:env(safe-area-inset-bottom);
+}
+
+.reply-preview{
+display:none;
+background:#d9fdd3;
+padding:8px;
+font-size:13px;
+border-left:4px solid green;
+}
+
+.emoji-bar{
+display:flex;
+gap:8px;
+padding:8px;
+overflow-x:auto;
+background:white;
+}
+
+.emoji-bar button{
+min-width:42px;
+height:42px;
+font-size:18px;
+}
 
 .input{
 display:flex;
-padding:10px;
-background:#f0f0f0;
 align-items:center;
-gap:5px;
-position:sticky;
-bottom:0;
-width:100%;
-box-sizing:border-box;
+gap:6px;
+padding:10px;
 }
 
-input[type=text]{
+.message-input{
 flex:1;
 padding:14px;
 font-size:16px;
 border:none;
-border-radius:20px;
+border-radius:25px;
 outline:none;
 }
 
+.file-input{
+width:110px;
+font-size:12px;
+}
+
 button{
-padding:10px;
 border:none;
+border-radius:50%;
 background:#075e54;
 color:white;
-border-radius:50%;
+width:45px;
+height:45px;
+font-size:18px;
 cursor:pointer;
-font-size:16px;
+flex-shrink:0;
 }
 
 /* MENU */
@@ -176,53 +235,24 @@ font-size:16px;
 .menu{
 position:absolute;
 background:white;
-border:1px solid #ccc;
+border:1px solid #ddd;
 display:none;
-z-index:1000;
-box-shadow:0 2px 5px rgba(0,0,0,0.3);
+z-index:999;
+box-shadow:0 2px 10px rgba(0,0,0,0.2);
+border-radius:8px;
+overflow:hidden;
 }
 
 .menu div{
-padding:10px;
+padding:10px 15px;
 cursor:pointer;
 }
 
 .menu div:hover{
-background:#eee;
+background:#f0f0f0;
 }
 
-/* IMAGE */
-
-.chat-img{
-max-width:200px;
-border-radius:10px;
-}
-
-/* AUDIO */
-
-audio{
-width:220px;
-margin-top:5px;
-}
-
-/* EMOJI */
-
-.emoji-bar{
-padding:5px;
-background:white;
-overflow-x:auto;
-white-space:nowrap;
-}
-
-.reply-preview{
-background:#d9fdd3;
-padding:6px;
-border-left:4px solid green;
-margin:5px;
-display:none;
-}
-
-/* VIDEO CALL */
+/* VIDEO */
 
 #videoModal{
 display:none;
@@ -231,7 +261,7 @@ top:0;
 left:0;
 width:100%;
 height:100%;
-background:rgba(0,0,0,0.9);
+background:black;
 z-index:9999;
 justify-content:center;
 align-items:center;
@@ -239,56 +269,104 @@ flex-direction:column;
 }
 
 #localVideo{
-width:70%;
+width:95%;
 max-width:700px;
 border-radius:15px;
 background:black;
+}
+
+.video-controls{
+margin-top:20px;
+display:flex;
+gap:15px;
 }
 
 /* MOBILE */
 
 @media screen and (max-width:768px){
 
+.main{
+flex-direction:column;
+}
+
 .sidebar{
-width:35%;
-}
-
-.chat-area{
-width:65%;
-}
-
-.message{
-max-width:85%;
-font-size:15px;
-}
-
-.chat-header{
-padding:8px;
-font-size:14px;
-}
-
-.avatar{
-width:35px;
-height:35px;
-font-size:14px;
-}
-
-button{
-padding:10px;
-font-size:16px;
+width:100%;
+height:110px;
+display:flex;
+overflow-x:auto;
+overflow-y:hidden;
+white-space:nowrap;
+border-right:none;
+border-bottom:1px solid #ddd;
 }
 
 .user{
+min-width:140px;
+height:100%;
+flex-direction:column;
+justify-content:center;
+gap:5px;
+font-size:13px;
 padding:8px;
-font-size:14px;
 }
 
-#localVideo{
-width:95%;
+.user-left{
+flex-direction:column;
+gap:5px;
 }
 
-input[type=text]{
+.chat-area{
+width:100%;
+height:calc(100vh - 110px);
+}
+
+.chat-header{
+padding:10px;
+min-height:65px;
+}
+
+.header-user{
+font-size:15px;
+}
+
+.header-status{
+font-size:11px;
+}
+
+.message{
+max-width:88%;
+font-size:15px;
+}
+
+.chat-box{
+padding:10px;
+padding-bottom:140px;
+}
+
+.input{
+position:sticky;
+bottom:0;
+background:#f0f0f0;
+}
+
+.message-input{
 font-size:16px;
+padding:12px;
+}
+
+.file-input{
+width:90px;
+font-size:10px;
+}
+
+button{
+width:42px;
+height:42px;
+font-size:16px;
+}
+
+.chat-img{
+max-width:180px;
 }
 
 }
@@ -313,22 +391,19 @@ font-size:16px;
 <div class="user-left">
 
 <div class="avatar">
-
 {% if u[1] %}
 <img src="/static/profile_pics/{{u[1]}}">
 {% else %}
 {{u[0][0].upper()}}
 {% endif %}
-
 </div>
 
-<span>{{u[0]}}</span>
-
+<div>
+<div>{{u[0]}}</div>
+<div style="font-size:11px;color:gray;" id="status-{{u[0]}}">offline</div>
 </div>
 
-<span id="status-{{u[0]}}">
-offline
-</span>
+</div>
 
 </div>
 
@@ -337,7 +412,7 @@ offline
 
 </div>
 
-<!-- CHAT AREA -->
+<!-- CHAT -->
 
 <div class="chat-area">
 
@@ -346,41 +421,25 @@ offline
 <div class="header-left">
 
 <div class="avatar">
-
 {% if mypic %}
 <img src="/static/profile_pics/{{mypic}}">
 {% else %}
-{{user[0][0].upper()}}
+{{user[0].upper()}}
 {% endif %}
-
 </div>
 
 <div>
-
-<div id="chat-user">
-Select user
-</div>
-
-<div id="chat-status"></div>
-
+<div class="header-user" id="chat-user">Select User</div>
+<div class="header-status" id="chat-status"></div>
 </div>
 
 </div>
 
 <div style="display:flex;align-items:center;gap:10px;">
 
-<button onclick="startVideoCall()"
-style="
-background:white;
-color:#075e54;
-width:40px;
-height:40px;
-font-size:18px;
-">
-📹
-</button>
+<button onclick="startVideoCall()">📹</button>
 
-<a href="/logout" style="color:white">
+<a href="/logout" style="color:white;text-decoration:none;">
 Logout
 </a>
 
@@ -390,29 +449,25 @@ Logout
 
 <div id="chat-box" class="chat-box"></div>
 
+<div class="bottom-area">
+
 <div class="reply-preview" id="reply-preview">
-
-Replying to:
-<span id="reply-text"></span>
-
-<button onclick="cancelReply()">X</button>
-
+Replying to: <span id="reply-text"></span>
+<button onclick="cancelReply()" style="width:28px;height:28px;font-size:12px;">X</button>
 </div>
 
 <div class="emoji-bar">
-
 <button onclick="addEmoji('😀')">😀</button>
 <button onclick="addEmoji('😂')">😂</button>
 <button onclick="addEmoji('❤️')">❤️</button>
 <button onclick="addEmoji('👍')">👍</button>
-
 </div>
 
 <div class="input">
 
-<input type="text" id="msg" placeholder="Type message">
+<input type="text" id="msg" class="message-input" placeholder="Type message">
 
-<input type="file" id="file">
+<input type="file" id="file" class="file-input">
 
 <button onclick="startRecording()">🎤</button>
 
@@ -424,45 +479,23 @@ Replying to:
 
 </div>
 
-<!-- MENU -->
-
-<div id="menu" class="menu">
-
-<div onclick="replyMsg()">Reply</div>
-
-<div onclick="editMsg()">Edit</div>
-
-<div onclick="deleteMsg()">Delete</div>
-
 </div>
 
-<!-- VIDEO -->
+<div id="menu" class="menu">
+<div onclick="replyMsg()">Reply</div>
+<div onclick="editMsg()">Edit</div>
+<div onclick="deleteMsg()">Delete</div>
+</div>
 
 <div id="videoModal">
 
-<h2 style="color:white;">Video Call</h2>
+<h2 style="color:white;margin-bottom:15px;">Video Call</h2>
 
-<video
-id="localVideo"
-autoplay
-muted
-playsinline>
-</video>
+<video id="localVideo" autoplay muted playsinline></video>
 
-<button
-onclick="endVideoCall()"
-style="
-margin-top:20px;
-padding:15px;
-background:red;
-border:none;
-color:white;
-border-radius:50px;
-font-size:18px;
-cursor:pointer;
-">
-End Call
-</button>
+<div class="video-controls">
+<button onclick="endVideoCall()" style="background:red;">❌</button>
+</div>
 
 </div>
 
@@ -471,21 +504,13 @@ End Call
 var socket = io();
 
 var currentUser = "{{user}}";
-
 var selectedUser = "";
-
 var chatKey = "";
-
 var currentMsgId = null;
-
 var currentMsgText = "";
-
 var replyText = "";
-
 var mediaRecorder;
-
 var audioChunks = [];
-
 var localStream;
 
 /* ENTER SEND */
@@ -505,9 +530,7 @@ send();
 function addEmoji(e){
 
 let input=document.getElementById("msg");
-
 input.value += e;
-
 input.focus();
 
 }
@@ -525,7 +548,6 @@ fetch('/get_key/'+user)
 .then(d=>{
 
 chatKey=d.key;
-
 loadMessages();
 
 });
@@ -537,19 +559,15 @@ loadMessages();
 function decrypt(msg){
 
 try{
-
 return CryptoJS.AES.decrypt(msg,chatKey)
 .toString(CryptoJS.enc.Utf8) || msg;
-
 }catch{
-
 return msg;
-
 }
 
 }
 
-/* LOAD */
+/* LOAD MESSAGES */
 
 function loadMessages(){
 
@@ -575,66 +593,44 @@ let reply=m[6];
 
 let div=document.createElement("div");
 
-div.classList.add("message");
-
 if(sender===currentUser){
-div.classList.add("right");
+div.classList.add("message","right");
 }else{
-div.classList.add("left");
+div.classList.add("message","left");
 }
-
-let tick=(status==="seen")?"✔✔":"✔";
 
 let html="";
 
 if(reply){
-
-html += `
-<div class="reply-box">
-${reply}
-</div>
-`;
-
+html += `<div class="reply-box">${reply}</div>`;
 }
 
 if(type==="image"){
-
-html += `
-<img class="chat-img"
-src="/static/chat_images/${msg}">
-`;
-
+html += `<img class="chat-img" src="/static/chat_images/${msg}">`;
 }
 else if(type==="voice"){
-
 html += `
 <audio controls>
 <source src="/static/voice_notes/${msg}">
-</audio>
-`;
-
+</audio>`;
 }
 else{
-
 html += decrypt(msg);
-
 }
 
-html += `
-<div class="time">
-${time}
-${sender===currentUser ? tick : ""}
-</div>
-`;
+let tick=(status==="seen") ? "✔✔" : "✔";
+
+html += `<div class="time">${time} ${sender===currentUser ? tick : ''}</div>`;
 
 div.innerHTML=html;
+
+/* RIGHT CLICK */
 
 div.oncontextmenu=(e)=>{
 
 if(sender===currentUser){
 
 e.preventDefault();
-
 showMenu(e,id,decrypt(msg));
 
 }
@@ -642,12 +638,6 @@ showMenu(e,id,decrypt(msg));
 };
 
 box.appendChild(div);
-
-if(sender!==currentUser && status!=="seen"){
-
-socket.emit("seen",{id:id});
-
-}
 
 });
 
@@ -662,20 +652,16 @@ box.scrollTop=box.scrollHeight;
 function showMenu(e,id,text){
 
 let menu=document.getElementById("menu");
-
 menu.style.display="block";
-
 menu.style.left=e.pageX+"px";
-
 menu.style.top=e.pageY+"px";
 
 currentMsgId=id;
-
 currentMsgText=text;
 
 }
 
-document.addEventListener("click",()=>{
+window.addEventListener("click",()=>{
 
 document.getElementById("menu").style.display="none";
 
@@ -687,20 +673,18 @@ function replyMsg(){
 
 replyText=currentMsgText;
 
-document.getElementById("reply-preview")
-.style.display="block";
+document.getElementById("reply-preview").style.display="flex";
+document.getElementById("reply-preview").style.justifyContent="space-between";
+document.getElementById("reply-preview").style.alignItems="center";
 
-document.getElementById("reply-text")
-.innerText=currentMsgText;
+document.getElementById("reply-text").innerText=currentMsgText;
 
 }
 
 function cancelReply(){
 
 replyText="";
-
-document.getElementById("reply-preview")
-.style.display="none";
+document.getElementById("reply-preview").style.display="none";
 
 }
 
@@ -713,17 +697,9 @@ let nt=prompt("Edit message:",currentMsgText);
 if(nt){
 
 fetch('/edit_message/'+currentMsgId,{
-
-method:"POST",
-
-headers:{
-'Content-Type':'application/json'
-},
-
-body:JSON.stringify({
-message:nt
-})
-
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({message:nt})
 }).then(loadMessages);
 
 }
@@ -736,9 +712,8 @@ function deleteMsg(){
 
 if(confirm("Delete message?")){
 
-fetch('/delete_message/'+currentMsgId,{
-method:"POST"
-}).then(loadMessages);
+fetch('/delete_message/'+currentMsgId,{method:'POST'})
+.then(loadMessages);
 
 }
 
@@ -749,38 +724,30 @@ method:"POST"
 function send(){
 
 if(!selectedUser){
-
 alert("Select user first");
-
 return;
-
 }
 
 let msg=document.getElementById("msg").value;
-
 let file=document.getElementById("file").files[0];
 
 if(file){
 
 let f=new FormData();
-
 f.append("file",file);
 
 fetch('/upload_image',{
 method:'POST',
 body:f
 })
-
 .then(r=>r.json())
 .then(d=>{
 
 socket.emit("private_message",{
-
 msg:d.filename,
 to:selectedUser,
 type:"image",
 reply:replyText
-
 });
 
 loadMessages();
@@ -792,21 +759,18 @@ document.getElementById("file").value="";
 }
 else if(msg){
 
-let enc=CryptoJS.AES.encrypt(msg,chatKey)
-.toString();
+let enc=CryptoJS.AES.encrypt(msg,chatKey).toString();
 
 socket.emit("private_message",{
-
 msg:enc,
 to:selectedUser,
 type:"text",
 reply:replyText
-
 });
 
-document.getElementById("msg").value="";
-
 loadMessages();
+
+document.getElementById("msg").value="";
 
 }
 
@@ -819,16 +783,11 @@ cancelReply();
 async function startRecording(){
 
 if(!selectedUser){
-
 alert("Select user first");
-
 return;
-
 }
 
-let stream = await navigator.mediaDevices.getUserMedia({
-audio:true
-});
+let stream = await navigator.mediaDevices.getUserMedia({audio:true});
 
 mediaRecorder = new MediaRecorder(stream);
 
@@ -842,12 +801,9 @@ audioChunks.push(e.data);
 
 mediaRecorder.onstop = async ()=>{
 
-let blob = new Blob(audioChunks,{
-type:'audio/webm'
-});
+let blob = new Blob(audioChunks,{type:'audio/webm'});
 
 let fd = new FormData();
-
 fd.append("audio",blob);
 
 let r = await fetch('/upload_voice',{
@@ -858,12 +814,10 @@ body:fd
 let d = await r.json();
 
 socket.emit("private_message",{
-
 msg:d.filename,
 to:selectedUser,
 type:"voice",
 reply:replyText
-
 });
 
 loadMessages();
@@ -883,40 +837,31 @@ async function startVideoCall(){
 try{
 
 localStream = await navigator.mediaDevices.getUserMedia({
-
 video:true,
 audio:true
-
 });
 
-document.getElementById("videoModal")
-.style.display="flex";
+document.getElementById("videoModal").style.display="flex";
 
-document.getElementById("localVideo")
-.srcObject = localStream;
+document.getElementById("localVideo").srcObject = localStream;
 
 }catch(err){
-
-alert("Camera or microphone access denied");
-
+alert("Camera or microphone denied");
 }
 
 }
 
 function endVideoCall(){
 
-document.getElementById("videoModal")
-.style.display="none";
-
 if(localStream){
 
 localStream.getTracks().forEach(track=>{
-
 track.stop();
-
 });
 
 }
+
+document.getElementById("videoModal").style.display="none";
 
 }
 
@@ -927,7 +872,6 @@ socket.on("message",loadMessages);
 socket.on("status",data=>{
 
 let online=data.online;
-
 let last=data.last_seen;
 
 document.querySelectorAll("[id^=status-]")
@@ -936,13 +880,9 @@ document.querySelectorAll("[id^=status-]")
 let user=el.id.replace("status-","");
 
 if(online.includes(user)){
-
 el.innerText="🟢 online";
-
 }else if(last[user]){
-
 el.innerText="last seen "+last[user];
-
 }
 
 });
@@ -952,13 +892,9 @@ if(selectedUser){
 let el=document.getElementById("chat-status");
 
 if(online.includes(selectedUser)){
-
 el.innerText="🟢 online";
-
 }else if(last[selectedUser]){
-
 el.innerText="last seen "+last[selectedUser];
-
 }
 
 }
@@ -971,3 +907,6 @@ socket.emit("join",{username:currentUser});
 
 </body>
 </html>
+```
+
+
