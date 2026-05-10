@@ -1,377 +1,17 @@
-# Replace `templates/chat.html` with this FULL updated code
-
-```html
 <!DOCTYPE html>
 <html>
 <head>
 
 <title>Secure Chat</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<link rel="stylesheet" href="/static/style.css">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-}
-
-html,body{
-height:100%;
-font-family:Arial;
-background:#ece5dd;
-overflow:hidden;
-}
-
-body{
-width:100vw;
-}
-
-.main{
-display:flex;
-height:100vh;
-width:100vw;
-overflow:hidden;
-}
-
-/* SIDEBAR */
-
-.sidebar{
-width:30%;
-background:white;
-border-right:1px solid #ddd;
-overflow-y:auto;
-}
-
-.user{
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:12px;
-border-bottom:1px solid #eee;
-cursor:pointer;
-}
-
-.user-left{
-display:flex;
-align-items:center;
-gap:10px;
-}
-
-.avatar{
-width:42px;
-height:42px;
-border-radius:50%;
-background:#075e54;
-color:white;
-display:flex;
-align-items:center;
-justify-content:center;
-font-weight:bold;
-overflow:hidden;
-flex-shrink:0;
-}
-
-.avatar img{
-width:100%;
-height:100%;
-object-fit:cover;
-}
-
-/* CHAT AREA */
-
-.chat-area{
-width:70%;
-display:flex;
-flex-direction:column;
-height:100vh;
-position:relative;
-}
-
-.chat-header{
-background:#075e54;
-color:white;
-padding:10px;
-display:flex;
-align-items:center;
-justify-content:space-between;
-min-height:70px;
-}
-
-.header-left{
-display:flex;
-align-items:center;
-gap:10px;
-}
-
-.header-user{
-font-size:16px;
-font-weight:bold;
-}
-
-.header-status{
-font-size:12px;
-opacity:0.9;
-}
-
-.chat-box{
-flex:1;
-overflow-y:auto;
-padding:12px;
-display:flex;
-flex-direction:column;
-gap:8px;
-scroll-behavior:smooth;
-}
-
-.message{
-max-width:75%;
-padding:10px;
-border-radius:10px;
-word-wrap:break-word;
-position:relative;
-font-size:15px;
-}
-
-.left{
-background:white;
-align-self:flex-start;
-}
-
-.right{
-background:#dcf8c6;
-align-self:flex-end;
-}
-
-.time{
-font-size:10px;
-color:gray;
-margin-top:5px;
-text-align:right;
-}
-
-.chat-img{
-max-width:220px;
-border-radius:10px;
-}
-
-.reply-box{
-background:rgba(0,0,0,0.08);
-padding:6px;
-border-left:4px solid #075e54;
-margin-bottom:5px;
-font-size:12px;
-border-radius:4px;
-}
-
-/* INPUT AREA */
-
-.bottom-area{
-background:#f0f0f0;
-padding-bottom:env(safe-area-inset-bottom);
-}
-
-.reply-preview{
-display:none;
-background:#d9fdd3;
-padding:8px;
-font-size:13px;
-border-left:4px solid green;
-}
-
-.emoji-bar{
-display:flex;
-gap:8px;
-padding:8px;
-overflow-x:auto;
-background:white;
-}
-
-.emoji-bar button{
-min-width:42px;
-height:42px;
-font-size:18px;
-}
-
-.input{
-display:flex;
-align-items:center;
-gap:6px;
-padding:10px;
-}
-
-.message-input{
-flex:1;
-padding:14px;
-font-size:16px;
-border:none;
-border-radius:25px;
-outline:none;
-}
-
-.file-input{
-width:110px;
-font-size:12px;
-}
-
-button{
-border:none;
-border-radius:50%;
-background:#075e54;
-color:white;
-width:45px;
-height:45px;
-font-size:18px;
-cursor:pointer;
-flex-shrink:0;
-}
-
-/* MENU */
-
-.menu{
-position:absolute;
-background:white;
-border:1px solid #ddd;
-display:none;
-z-index:999;
-box-shadow:0 2px 10px rgba(0,0,0,0.2);
-border-radius:8px;
-overflow:hidden;
-}
-
-.menu div{
-padding:10px 15px;
-cursor:pointer;
-}
-
-.menu div:hover{
-background:#f0f0f0;
-}
-
-/* VIDEO */
-
-#videoModal{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:black;
-z-index:9999;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-}
-
-#localVideo{
-width:95%;
-max-width:700px;
-border-radius:15px;
-background:black;
-}
-
-.video-controls{
-margin-top:20px;
-display:flex;
-gap:15px;
-}
-
-/* MOBILE */
-
-@media screen and (max-width:768px){
-
-.main{
-flex-direction:column;
-}
-
-.sidebar{
-width:100%;
-height:110px;
-display:flex;
-overflow-x:auto;
-overflow-y:hidden;
-white-space:nowrap;
-border-right:none;
-border-bottom:1px solid #ddd;
-}
-
-.user{
-min-width:140px;
-height:100%;
-flex-direction:column;
-justify-content:center;
-gap:5px;
-font-size:13px;
-padding:8px;
-}
-
-.user-left{
-flex-direction:column;
-gap:5px;
-}
-
-.chat-area{
-width:100%;
-height:calc(100vh - 110px);
-}
-
-.chat-header{
-padding:10px;
-min-height:65px;
-}
-
-.header-user{
-font-size:15px;
-}
-
-.header-status{
-font-size:11px;
-}
-
-.message{
-max-width:88%;
-font-size:15px;
-}
-
-.chat-box{
-padding:10px;
-padding-bottom:140px;
-}
-
-.input{
-position:sticky;
-bottom:0;
-background:#f0f0f0;
-}
-
-.message-input{
-font-size:16px;
-padding:12px;
-}
-
-.file-input{
-width:90px;
-font-size:10px;
-}
-
-button{
-width:42px;
-height:42px;
-font-size:16px;
-}
-
-.chat-img{
-max-width:180px;
-}
-
-}
-
-</style>
 
 </head>
 
@@ -386,21 +26,31 @@ max-width:180px;
 {% for u in users %}
 {% if u[0] != user %}
 
-<div class="user" onclick="selectUser('{{u[0]}}')">
+<div class="user"
+onclick="selectUser('{{u[0]}}')">
 
 <div class="user-left">
 
 <div class="avatar">
+
 {% if u[1] %}
 <img src="/static/profile_pics/{{u[1]}}">
 {% else %}
 {{u[0][0].upper()}}
 {% endif %}
+
 </div>
 
 <div>
+
 <div>{{u[0]}}</div>
-<div style="font-size:11px;color:gray;" id="status-{{u[0]}}">offline</div>
+
+<div
+style="font-size:11px;color:gray;"
+id="status-{{u[0]}}">
+offline
+</div>
+
 </div>
 
 </div>
@@ -412,34 +62,50 @@ max-width:180px;
 
 </div>
 
-<!-- CHAT -->
+<!-- CHAT AREA -->
 
 <div class="chat-area">
+
+<!-- HEADER -->
 
 <div class="chat-header">
 
 <div class="header-left">
 
 <div class="avatar">
+
 {% if mypic %}
 <img src="/static/profile_pics/{{mypic}}">
 {% else %}
 {{user[0].upper()}}
 {% endif %}
+
 </div>
 
 <div>
-<div class="header-user" id="chat-user">Select User</div>
-<div class="header-status" id="chat-status"></div>
+
+<div class="header-user"
+id="chat-user">
+Select User
+</div>
+
+<div class="header-status"
+id="chat-status">
 </div>
 
 </div>
 
-<div style="display:flex;align-items:center;gap:10px;">
+</div>
 
-<button onclick="startVideoCall()">📹</button>
+<div
+style="display:flex;align-items:center;gap:10px;">
 
-<a href="/logout" style="color:white;text-decoration:none;">
+<button onclick="startVideoCall()">
+📹
+</button>
+
+<a href="/logout"
+style="color:white;text-decoration:none;">
 Logout
 </a>
 
@@ -447,31 +113,69 @@ Logout
 
 </div>
 
-<div id="chat-box" class="chat-box"></div>
+<!-- CHAT -->
+
+<div id="chat-box"
+class="chat-box">
+</div>
+
+<!-- BOTTOM -->
 
 <div class="bottom-area">
 
-<div class="reply-preview" id="reply-preview">
-Replying to: <span id="reply-text"></span>
-<button onclick="cancelReply()" style="width:28px;height:28px;font-size:12px;">X</button>
+<!-- REPLY -->
+
+<div class="reply-preview"
+id="reply-preview">
+
+Replying to:
+<span id="reply-text"></span>
+
+<button
+onclick="cancelReply()"
+style="
+width:28px;
+height:28px;
+font-size:12px;
+">
+X
+</button>
+
 </div>
 
+<!-- EMOJI -->
+
 <div class="emoji-bar">
+
 <button onclick="addEmoji('😀')">😀</button>
 <button onclick="addEmoji('😂')">😂</button>
 <button onclick="addEmoji('❤️')">❤️</button>
 <button onclick="addEmoji('👍')">👍</button>
+
 </div>
+
+<!-- INPUT -->
 
 <div class="input">
 
-<input type="text" id="msg" class="message-input" placeholder="Type message">
+<input
+type="text"
+id="msg"
+class="message-input"
+placeholder="Type message">
 
-<input type="file" id="file" class="file-input">
+<input
+type="file"
+id="file"
+class="file-input">
 
-<button onclick="startRecording()">🎤</button>
+<button onclick="startRecording()">
+🎤
+</button>
 
-<button onclick="send()">➤</button>
+<button onclick="send()">
+➤
+</button>
 
 </div>
 
@@ -480,21 +184,42 @@ Replying to: <span id="reply-text"></span>
 </div>
 
 </div>
+
+<!-- MENU -->
 
 <div id="menu" class="menu">
+
 <div onclick="replyMsg()">Reply</div>
+
 <div onclick="editMsg()">Edit</div>
+
 <div onclick="deleteMsg()">Delete</div>
+
 </div>
+
+<!-- VIDEO -->
 
 <div id="videoModal">
 
-<h2 style="color:white;margin-bottom:15px;">Video Call</h2>
+<h2 style="color:white;margin-bottom:15px;">
+Video Call
+</h2>
 
-<video id="localVideo" autoplay muted playsinline></video>
+<video
+id="localVideo"
+autoplay
+muted
+playsinline>
+</video>
 
 <div class="video-controls">
-<button onclick="endVideoCall()" style="background:red;">❌</button>
+
+<button
+onclick="endVideoCall()"
+style="background:red;">
+❌
+</button>
+
 </div>
 
 </div>
@@ -504,13 +229,21 @@ Replying to: <span id="reply-text"></span>
 var socket = io();
 
 var currentUser = "{{user}}";
+
 var selectedUser = "";
+
 var chatKey = "";
+
 var currentMsgId = null;
+
 var currentMsgText = "";
+
 var replyText = "";
+
 var mediaRecorder;
+
 var audioChunks = [];
+
 var localStream;
 
 /* ENTER SEND */
@@ -519,8 +252,11 @@ document.getElementById("msg")
 .addEventListener("keydown",function(e){
 
 if(e.key==="Enter"){
+
 e.preventDefault();
+
 send();
+
 }
 
 });
@@ -530,7 +266,9 @@ send();
 function addEmoji(e){
 
 let input=document.getElementById("msg");
+
 input.value += e;
+
 input.focus();
 
 }
@@ -541,13 +279,17 @@ function selectUser(user){
 
 selectedUser=user;
 
-document.getElementById("chat-user").innerText=user;
+document.getElementById("chat-user")
+.innerText=user;
 
 fetch('/get_key/'+user)
+
 .then(r=>r.json())
+
 .then(d=>{
 
 chatKey=d.key;
+
 loadMessages();
 
 });
@@ -559,10 +301,14 @@ loadMessages();
 function decrypt(msg){
 
 try{
+
 return CryptoJS.AES.decrypt(msg,chatKey)
 .toString(CryptoJS.enc.Utf8) || msg;
+
 }catch{
+
 return msg;
+
 }
 
 }
@@ -574,7 +320,9 @@ function loadMessages(){
 if(!selectedUser) return;
 
 fetch('/get_messages/'+selectedUser)
+
 .then(r=>r.json())
+
 .then(data=>{
 
 let box=document.getElementById("chat-box");
@@ -584,43 +332,76 @@ box.innerHTML="";
 data.messages.forEach(m=>{
 
 let id=m[0];
+
 let sender=m[1];
+
 let msg=m[2];
+
 let status=m[3];
+
 let time=m[4];
+
 let type=m[5];
+
 let reply=m[6];
 
 let div=document.createElement("div");
 
 if(sender===currentUser){
+
 div.classList.add("message","right");
+
 }else{
+
 div.classList.add("message","left");
+
 }
 
 let html="";
 
 if(reply){
-html += `<div class="reply-box">${reply}</div>`;
+
+html += `
+<div class="reply-box">
+${reply}
+</div>
+`;
+
 }
 
 if(type==="image"){
-html += `<img class="chat-img" src="/static/chat_images/${msg}">`;
+
+html += `
+<img class="chat-img"
+src="/static/chat_images/${msg}">
+`;
+
 }
 else if(type==="voice"){
+
 html += `
 <audio controls>
 <source src="/static/voice_notes/${msg}">
-</audio>`;
+</audio>
+`;
+
 }
 else{
+
 html += decrypt(msg);
+
 }
 
-let tick=(status==="seen") ? "✔✔" : "✔";
+let tick=(status==="seen")
+? "✔✔"
+: "✔";
 
-html += `<div class="time">${time} ${sender===currentUser ? tick : ''}</div>`;
+html += `
+<div class="time">
+${time}
+${sender===currentUser ? tick : ""}
+</div>
+`;
 
 div.innerHTML=html;
 
@@ -631,6 +412,7 @@ div.oncontextmenu=(e)=>{
 if(sender===currentUser){
 
 e.preventDefault();
+
 showMenu(e,id,decrypt(msg));
 
 }
@@ -652,18 +434,23 @@ box.scrollTop=box.scrollHeight;
 function showMenu(e,id,text){
 
 let menu=document.getElementById("menu");
+
 menu.style.display="block";
+
 menu.style.left=e.pageX+"px";
+
 menu.style.top=e.pageY+"px";
 
 currentMsgId=id;
+
 currentMsgText=text;
 
 }
 
 window.addEventListener("click",()=>{
 
-document.getElementById("menu").style.display="none";
+document.getElementById("menu")
+.style.display="none";
 
 });
 
@@ -673,18 +460,26 @@ function replyMsg(){
 
 replyText=currentMsgText;
 
-document.getElementById("reply-preview").style.display="flex";
-document.getElementById("reply-preview").style.justifyContent="space-between";
-document.getElementById("reply-preview").style.alignItems="center";
+document.getElementById("reply-preview")
+.style.display="flex";
 
-document.getElementById("reply-text").innerText=currentMsgText;
+document.getElementById("reply-preview")
+.style.justifyContent="space-between";
+
+document.getElementById("reply-preview")
+.style.alignItems="center";
+
+document.getElementById("reply-text")
+.innerText=currentMsgText;
 
 }
 
 function cancelReply(){
 
 replyText="";
-document.getElementById("reply-preview").style.display="none";
+
+document.getElementById("reply-preview")
+.style.display="none";
 
 }
 
@@ -692,14 +487,25 @@ document.getElementById("reply-preview").style.display="none";
 
 function editMsg(){
 
-let nt=prompt("Edit message:",currentMsgText);
+let nt=prompt(
+"Edit message:",
+currentMsgText
+);
 
 if(nt){
 
 fetch('/edit_message/'+currentMsgId,{
+
 method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({message:nt})
+
+headers:{
+'Content-Type':'application/json'
+},
+
+body:JSON.stringify({
+message:nt
+})
+
 }).then(loadMessages);
 
 }
@@ -712,7 +518,10 @@ function deleteMsg(){
 
 if(confirm("Delete message?")){
 
-fetch('/delete_message/'+currentMsgId,{method:'POST'})
+fetch('/delete_message/'+currentMsgId,{
+method:'POST'
+})
+
 .then(loadMessages);
 
 }
@@ -724,30 +533,45 @@ fetch('/delete_message/'+currentMsgId,{method:'POST'})
 function send(){
 
 if(!selectedUser){
+
 alert("Select user first");
+
 return;
+
 }
 
 let msg=document.getElementById("msg").value;
+
 let file=document.getElementById("file").files[0];
 
 if(file){
 
 let f=new FormData();
+
 f.append("file",file);
 
 fetch('/upload_image',{
+
 method:'POST',
+
 body:f
+
 })
+
 .then(r=>r.json())
+
 .then(d=>{
 
 socket.emit("private_message",{
+
 msg:d.filename,
+
 to:selectedUser,
+
 type:"image",
+
 reply:replyText
+
 });
 
 loadMessages();
@@ -759,13 +583,19 @@ document.getElementById("file").value="";
 }
 else if(msg){
 
-let enc=CryptoJS.AES.encrypt(msg,chatKey).toString();
+let enc=CryptoJS.AES.encrypt(msg,chatKey)
+.toString();
 
 socket.emit("private_message",{
+
 msg:enc,
+
 to:selectedUser,
+
 type:"text",
+
 reply:replyText
+
 });
 
 loadMessages();
@@ -783,11 +613,15 @@ cancelReply();
 async function startRecording(){
 
 if(!selectedUser){
+
 alert("Select user first");
+
 return;
+
 }
 
-let stream = await navigator.mediaDevices.getUserMedia({audio:true});
+let stream = await navigator.mediaDevices
+.getUserMedia({audio:true});
 
 mediaRecorder = new MediaRecorder(stream);
 
@@ -796,28 +630,41 @@ mediaRecorder.start();
 audioChunks=[];
 
 mediaRecorder.ondataavailable = e=>{
+
 audioChunks.push(e.data);
+
 };
 
 mediaRecorder.onstop = async ()=>{
 
-let blob = new Blob(audioChunks,{type:'audio/webm'});
+let blob = new Blob(audioChunks,{
+type:'audio/webm'
+});
 
 let fd = new FormData();
+
 fd.append("audio",blob);
 
 let r = await fetch('/upload_voice',{
+
 method:'POST',
+
 body:fd
+
 });
 
 let d = await r.json();
 
 socket.emit("private_message",{
+
 msg:d.filename,
+
 to:selectedUser,
+
 type:"voice",
+
 reply:replyText
+
 });
 
 loadMessages();
@@ -825,7 +672,9 @@ loadMessages();
 };
 
 setTimeout(()=>{
+
 mediaRecorder.stop();
+
 },5000);
 
 }
@@ -836,17 +685,26 @@ async function startVideoCall(){
 
 try{
 
-localStream = await navigator.mediaDevices.getUserMedia({
+localStream =
+await navigator.mediaDevices.getUserMedia({
+
 video:true,
 audio:true
+
 });
 
-document.getElementById("videoModal").style.display="flex";
+document.getElementById("videoModal")
+.style.display="flex";
 
-document.getElementById("localVideo").srcObject = localStream;
+document.getElementById("localVideo")
+.srcObject = localStream;
 
 }catch(err){
-alert("Camera or microphone denied");
+
+alert(
+"Camera or microphone denied"
+);
+
 }
 
 }
@@ -856,12 +714,15 @@ function endVideoCall(){
 if(localStream){
 
 localStream.getTracks().forEach(track=>{
+
 track.stop();
+
 });
 
 }
 
-document.getElementById("videoModal").style.display="none";
+document.getElementById("videoModal")
+.style.display="none";
 
 }
 
@@ -872,17 +733,25 @@ socket.on("message",loadMessages);
 socket.on("status",data=>{
 
 let online=data.online;
+
 let last=data.last_seen;
 
 document.querySelectorAll("[id^=status-]")
+
 .forEach(el=>{
 
 let user=el.id.replace("status-","");
 
 if(online.includes(user)){
+
 el.innerText="🟢 online";
-}else if(last[user]){
-el.innerText="last seen "+last[user];
+
+}
+else if(last[user]){
+
+el.innerText=
+"last seen "+last[user];
+
 }
 
 });
@@ -892,21 +761,28 @@ if(selectedUser){
 let el=document.getElementById("chat-status");
 
 if(online.includes(selectedUser)){
+
 el.innerText="🟢 online";
-}else if(last[selectedUser]){
-el.innerText="last seen "+last[selectedUser];
+
+}
+else if(last[selectedUser]){
+
+el.innerText=
+"last seen "+last[selectedUser];
+
 }
 
 }
 
 });
 
-socket.emit("join",{username:currentUser});
+socket.emit("join",{
+username:currentUser
+});
 
 </script>
 
 </body>
 </html>
-```
 
 
