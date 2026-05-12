@@ -32,7 +32,15 @@ last_seen = {}
 
 # ---------- DATABASE ----------
 def get_db():
-    return sqlite3.connect("database.db", check_same_thread=False)
+
+    conn = sqlite3.connect(
+        "database.db",
+        check_same_thread=False
+    )
+
+    conn.row_factory = sqlite3.Row
+
+    return conn
 
 def init_db():
 
@@ -88,7 +96,10 @@ def register():
     if request.method == 'POST':
 
         user = request.form['username']
-        pwd = generate_password_hash(request.form['password'])
+
+        pwd = generate_password_hash(
+            request.form['password']
+        )
 
         pic = request.files.get('profile_pic')
 
@@ -96,7 +107,11 @@ def register():
 
         if pic and pic.filename != "":
 
-            filename = secrets.token_hex(8) + "_" + pic.filename
+            filename = (
+                secrets.token_hex(8)
+                + "_"
+                + os.path.basename(pic.filename)
+            )
 
             pic.save(
                 os.path.join(PROFILE_FOLDER, filename)
@@ -144,7 +159,7 @@ def login():
 
     conn.close()
 
-    if data and check_password_hash(data[1], pwd):
+    if data and check_password_hash(data['password'], pwd):
 
         session['user'] = user
 
@@ -178,7 +193,7 @@ def chat():
     mypic = ""
 
     if mypic_data:
-        mypic = mypic_data[0]
+        mypic = mypic_data['profile_pic']
 
     conn.close()
 
@@ -193,7 +208,23 @@ def chat():
 @app.route('/logout')
 def logout():
 
+    user = session.get('user')
+
+    if user:
+
+        if user in online_users:
+            online_users.remove(user)
+
+        last_seen[user] = datetime.now().strftime(
+            "%d %b %I:%M %p"
+        )
+
     session.clear()
+
+    socketio.emit("status", {
+        "online": list(online_users),
+        "last_seen": last_seen
+    })
 
     return redirect('/')
 
@@ -216,7 +247,7 @@ def get_key(user):
 
     if row:
 
-        key = row[0]
+        key = row['chat_key']
 
     else:
 
@@ -242,8 +273,19 @@ def get_messages(user):
     conn = get_db()
     c = conn.cursor()
 
+    # AUTO SEEN
     c.execute("""
-    SELECT id, sender, message, status, time, type, reply_text
+    UPDATE messages
+    SET status='seen'
+    WHERE receiver=?
+    AND sender=?
+    """,(current,user))
+
+    conn.commit()
+
+    c.execute("""
+    SELECT id, sender, message,
+    status, time, type, reply_text
     FROM messages
     WHERE (sender=? AND receiver=?)
     OR (sender=? AND receiver=?)
@@ -254,7 +296,20 @@ def get_messages(user):
 
     conn.close()
 
-    return {"messages": data}
+    return {
+        "messages": [
+            [
+                row["id"],
+                row["sender"],
+                row["message"],
+                row["status"],
+                row["time"],
+                row["type"],
+                row["reply_text"]
+            ]
+            for row in data
+        ]
+    }
 
 # ---------- UPLOAD IMAGE ----------
 @app.route('/upload_image', methods=['POST'])
@@ -262,7 +317,11 @@ def upload_image():
 
     file = request.files['file']
 
-    filename = secrets.token_hex(8) + "_" + file.filename
+    filename = (
+        secrets.token_hex(8)
+        + "_"
+        + os.path.basename(file.filename)
+    )
 
     file.save(
         os.path.join(IMAGE_FOLDER, filename)
@@ -351,7 +410,9 @@ def disconnect_user():
         if user in online_users:
             online_users.remove(user)
 
-        last_seen[user] = datetime.now().strftime("%I:%M %p")
+        last_seen[user] = datetime.now().strftime(
+            "%d %b %I:%M %p"
+        )
 
     socketio.emit("status", {
         "online": list(online_users),
@@ -372,7 +433,9 @@ def private_message(data):
 
     reply_text = data.get('reply', '')
 
-    time = datetime.now().strftime("%I:%M %p")
+    time = datetime.now().strftime(
+        "%d %b %I:%M %p"
+    )
 
     conn = get_db()
     c = conn.cursor()
