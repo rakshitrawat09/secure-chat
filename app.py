@@ -5,7 +5,9 @@ import os
 import secrets
 
 from werkzeug.security import generate_password_hash, check_password_hash
+
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # ---------- APP ----------
 app = Flask(__name__)
@@ -26,7 +28,7 @@ os.makedirs(IMAGE_FOLDER, exist_ok=True)
 os.makedirs(VOICE_FOLDER, exist_ok=True)
 os.makedirs(PROFILE_FOLDER, exist_ok=True)
 
-# ---------- ONLINE USERS ----------
+# ---------- ONLINE ----------
 online_users = set()
 last_seen = {}
 
@@ -42,6 +44,7 @@ def get_db():
 
     return conn
 
+# ---------- INIT DB ----------
 def init_db():
 
     conn = get_db()
@@ -70,7 +73,7 @@ def init_db():
     )
     """)
 
-    # CHAT KEYS
+    # KEYS
     c.execute("""
     CREATE TABLE IF NOT EXISTS chat_keys(
         user1 TEXT,
@@ -177,16 +180,18 @@ def chat():
     conn = get_db()
     c = conn.cursor()
 
-    c.execute(
-        "SELECT username, profile_pic FROM users"
-    )
+    c.execute("""
+    SELECT username, profile_pic
+    FROM users
+    """)
 
     users = c.fetchall()
 
-    c.execute(
-        "SELECT profile_pic FROM users WHERE username=?",
-        (session['user'],)
-    )
+    c.execute("""
+    SELECT profile_pic
+    FROM users
+    WHERE username=?
+    """,(session['user'],))
 
     mypic_data = c.fetchone()
 
@@ -215,7 +220,9 @@ def logout():
         if user in online_users:
             online_users.remove(user)
 
-        last_seen[user] = datetime.now().strftime(
+        last_seen[user] = datetime.now(
+            ZoneInfo("Asia/Kolkata")
+        ).strftime(
             "%d %b %I:%M %p"
         )
 
@@ -238,10 +245,16 @@ def get_key(user):
     c = conn.cursor()
 
     c.execute("""
-    SELECT chat_key FROM chat_keys
+    SELECT chat_key
+    FROM chat_keys
     WHERE (user1=? AND user2=?)
     OR (user1=? AND user2=?)
-    """, (current, user, user, current))
+    """, (
+        current,
+        user,
+        user,
+        current
+    ))
 
     row = c.fetchone()
 
@@ -253,10 +266,14 @@ def get_key(user):
 
         key = secrets.token_hex(16)
 
-        c.execute(
-            "INSERT INTO chat_keys VALUES (?,?,?)",
-            (current, user, key)
-        )
+        c.execute("""
+        INSERT INTO chat_keys
+        VALUES (?,?,?)
+        """, (
+            current,
+            user,
+            key
+        ))
 
         conn.commit()
 
@@ -279,18 +296,31 @@ def get_messages(user):
     SET status='seen'
     WHERE receiver=?
     AND sender=?
-    """,(current,user))
+    """, (
+        current,
+        user
+    ))
 
     conn.commit()
 
     c.execute("""
-    SELECT id, sender, message,
-    status, time, type, reply_text
+    SELECT id,
+           sender,
+           message,
+           status,
+           time,
+           type,
+           reply_text
     FROM messages
     WHERE (sender=? AND receiver=?)
     OR (sender=? AND receiver=?)
     ORDER BY id ASC
-    """, (current, user, user, current))
+    """, (
+        current,
+        user,
+        user,
+        current
+    ))
 
     data = c.fetchall()
 
@@ -324,7 +354,10 @@ def upload_image():
     )
 
     file.save(
-        os.path.join(IMAGE_FOLDER, filename)
+        os.path.join(
+            IMAGE_FOLDER,
+            filename
+        )
     )
 
     return {"filename": filename}
@@ -338,7 +371,10 @@ def upload_voice():
     filename = secrets.token_hex(8) + ".webm"
 
     file.save(
-        os.path.join(VOICE_FOLDER, filename)
+        os.path.join(
+            VOICE_FOLDER,
+            filename
+        )
     )
 
     return {"filename": filename}
@@ -350,10 +386,10 @@ def delete_message(msg_id):
     conn = get_db()
     c = conn.cursor()
 
-    c.execute(
-        "DELETE FROM messages WHERE id=?",
-        (msg_id,)
-    )
+    c.execute("""
+    DELETE FROM messages
+    WHERE id=?
+    """, (msg_id,))
 
     conn.commit()
     conn.close()
@@ -375,7 +411,10 @@ def edit_message(msg_id):
     UPDATE messages
     SET message=?
     WHERE id=?
-    """, (new_text, msg_id))
+    """, (
+        new_text,
+        msg_id
+    ))
 
     conn.commit()
     conn.close()
@@ -384,7 +423,7 @@ def edit_message(msg_id):
 
     return {"status": "edited"}
 
-# ---------- SOCKET JOIN ----------
+# ---------- JOIN ----------
 @socketio.on('join')
 def join(data):
 
@@ -399,7 +438,7 @@ def join(data):
         "last_seen": last_seen
     })
 
-# ---------- SOCKET DISCONNECT ----------
+# ---------- DISCONNECT ----------
 @socketio.on('disconnect')
 def disconnect_user():
 
@@ -410,7 +449,9 @@ def disconnect_user():
         if user in online_users:
             online_users.remove(user)
 
-        last_seen[user] = datetime.now().strftime(
+        last_seen[user] = datetime.now(
+            ZoneInfo("Asia/Kolkata")
+        ).strftime(
             "%d %b %I:%M %p"
         )
 
@@ -433,7 +474,9 @@ def private_message(data):
 
     reply_text = data.get('reply', '')
 
-    time = datetime.now().strftime(
+    time = datetime.now(
+        ZoneInfo("Asia/Kolkata")
+    ).strftime(
         "%d %b %I:%M %p"
     )
 
@@ -464,8 +507,15 @@ def private_message(data):
     conn.commit()
     conn.close()
 
-    socketio.emit('message', room=receiver)
-    socketio.emit('message', room=sender)
+    socketio.emit(
+        'message',
+        room=receiver
+    )
+
+    socketio.emit(
+        'message',
+        room=sender
+    )
 
 # ---------- SEEN ----------
 @socketio.on('seen')
@@ -488,7 +538,9 @@ def seen(data):
 # ---------- RUN ----------
 if __name__ == "__main__":
 
-    port = int(os.environ.get("PORT", 5000))
+    port = int(
+        os.environ.get("PORT", 5000)
+    )
 
     socketio.run(
         app,
