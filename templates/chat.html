@@ -19,13 +19,15 @@ content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable
 
 <div class="main">
 
+<!-- SIDEBAR -->
+
 <div class="sidebar">
 
 {% for u in users %}
 {% if u[0] != user %}
 
 <div class="user"
-onclick="selectUser('{{u[0]}}')">
+onclick="selectUser('{{u[0]}}','{{u[1]}}')">
 
 <div class="user-left">
 
@@ -59,20 +61,19 @@ offline
 
 </div>
 
+<!-- CHAT AREA -->
+
 <div class="chat-area">
+
+<!-- HEADER -->
 
 <div class="chat-header">
 
 <div class="header-left">
 
-<div class="avatar">
-
-{% if mypic %}
-<img src="/static/profile_pics/{{mypic}}">
-{% else %}
-{{user[0][0].upper()}}
-{% endif %}
-
+<div class="avatar"
+id="chat-avatar">
+?
 </div>
 
 <div>
@@ -83,7 +84,9 @@ Select User
 </div>
 
 <div class="header-status"
-id="chat-status"></div>
+id="chat-status">
+offline
+</div>
 
 </div>
 
@@ -102,10 +105,16 @@ Logout
 
 </div>
 
+<!-- CHAT -->
+
 <div id="chat-box"
 class="chat-box"></div>
 
+<!-- BOTTOM -->
+
 <div class="bottom-area">
+
+<!-- REPLY -->
 
 <div class="reply-preview"
 id="reply-preview">
@@ -113,21 +122,27 @@ id="reply-preview">
 Replying to:
 <span id="reply-text"></span>
 
-<button onclick="cancelReply()"
-style="width:28px;height:28px;font-size:12px;">
+<button onclick="cancelReply()">
 X
 </button>
 
 </div>
 
+<!-- EMOJIS -->
+
 <div class="emoji-bar">
 
 <button onclick="addEmoji('😀')">😀</button>
+
 <button onclick="addEmoji('😂')">😂</button>
+
 <button onclick="addEmoji('❤️')">❤️</button>
+
 <button onclick="addEmoji('👍')">👍</button>
 
 </div>
+
+<!-- INPUT -->
 
 <div class="input">
 
@@ -154,13 +169,22 @@ class="file-input">
 
 </div>
 
-<div id="menu" class="menu">
+<!-- MENU -->
 
-<div onclick="replyMsg()">Reply</div>
+<div id="menu"
+class="menu">
 
-<div onclick="editMsg()">Edit</div>
+<div onclick="replyMsg()">
+Reply
+</div>
 
-<div onclick="deleteMsg()">Delete</div>
+<div onclick="editMsg()">
+Edit
+</div>
+
+<div onclick="deleteMsg()">
+Delete
+</div>
 
 </div>
 
@@ -260,12 +284,29 @@ input.focus();
 
 /* SELECT USER */
 
-function selectUser(user){
+function selectUser(user,pic=""){
 
-selectedUser=user;
+selectedUser = user;
 
 document.getElementById("chat-user")
-.innerText=user;
+.innerText = user;
+
+/* FIX PROFILE */
+
+let avatar =
+document.getElementById("chat-avatar");
+
+if(pic && pic !== "None"){
+
+avatar.innerHTML =
+`<img src="/static/profile_pics/${pic}">`;
+
+}else{
+
+avatar.innerHTML =
+user.charAt(0).toUpperCase();
+
+}
 
 fetch('/get_key/'+user)
 
@@ -298,7 +339,7 @@ return msg;
 
 }
 
-/* LOAD */
+/* LOAD MESSAGES */
 
 function loadMessages(){
 
@@ -344,6 +385,8 @@ div.classList.add("message","left");
 
 let html="";
 
+/* REPLY */
+
 if(reply){
 
 html += `
@@ -353,6 +396,8 @@ ${reply}
 `;
 
 }
+
+/* IMAGE */
 
 if(type==="image"){
 
@@ -376,6 +421,9 @@ download>
 `;
 
 }
+
+/* VOICE */
+
 else if(type==="voice"){
 
 html += `
@@ -385,6 +433,9 @@ html += `
 `;
 
 }
+
+/* TEXT */
+
 else{
 
 html += decrypt(msg);
@@ -403,6 +454,26 @@ ${sender===currentUser ? tick : ""}
 `;
 
 div.innerHTML=html;
+
+/* CLICK REPLY */
+
+div.onclick = ()=>{
+
+if(sender !== currentUser){
+
+replyText = decrypt(msg);
+
+document.getElementById("reply-preview")
+.style.display="flex";
+
+document.getElementById("reply-text")
+.innerText=decrypt(msg);
+
+}
+
+};
+
+/* RIGHT CLICK */
 
 div.oncontextmenu=(e)=>{
 
@@ -426,7 +497,7 @@ box.scrollTop=box.scrollHeight;
 
 }
 
-/* IMAGE VIEWER */
+/* IMAGE */
 
 function openImage(src){
 
@@ -563,6 +634,8 @@ let msg=document.getElementById("msg").value;
 
 let file=document.getElementById("file").files[0];
 
+/* IMAGE */
+
 if(file){
 
 let f=new FormData();
@@ -600,6 +673,9 @@ loadMessages();
 document.getElementById("file").value="";
 
 }
+
+/* TEXT */
+
 else if(msg){
 
 let enc=CryptoJS.AES.encrypt(msg,chatKey)
@@ -639,10 +715,12 @@ return;
 
 }
 
-let stream = await navigator.mediaDevices
+let stream =
+await navigator.mediaDevices
 .getUserMedia({audio:true});
 
-mediaRecorder = new MediaRecorder(stream);
+mediaRecorder =
+new MediaRecorder(stream);
 
 mediaRecorder.start();
 
@@ -656,7 +734,8 @@ audioChunks.push(e.data);
 
 mediaRecorder.onstop = async ()=>{
 
-let blob = new Blob(audioChunks,{
+let blob =
+new Blob(audioChunks,{
 type:'audio/webm'
 });
 
@@ -664,7 +743,8 @@ let fd = new FormData();
 
 fd.append("audio",blob);
 
-let r = await fetch('/upload_voice',{
+let r =
+await fetch('/upload_voice',{
 
 method:'POST',
 
@@ -705,7 +785,8 @@ async function startVideoCall(){
 try{
 
 localStream =
-await navigator.mediaDevices.getUserMedia({
+await navigator.mediaDevices
+.getUserMedia({
 
 video:true,
 audio:true
@@ -732,7 +813,8 @@ function endVideoCall(){
 
 if(localStream){
 
-localStream.getTracks().forEach(track=>{
+localStream.getTracks()
+.forEach(track=>{
 
 track.stop();
 
@@ -759,7 +841,8 @@ document.querySelectorAll("[id^=status-]")
 
 .forEach(el=>{
 
-let user=el.id.replace("status-","");
+let user=
+el.id.replace("status-","");
 
 if(online.includes(user)){
 
@@ -777,7 +860,8 @@ el.innerText=
 
 if(selectedUser){
 
-let el=document.getElementById("chat-status");
+let el=
+document.getElementById("chat-status");
 
 if(online.includes(selectedUser)){
 
@@ -803,5 +887,3 @@ username:currentUser
 
 </body>
 </html>
-
-
