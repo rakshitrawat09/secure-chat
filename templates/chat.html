@@ -1,237 +1,17 @@
-
-
-
 <!DOCTYPE html>
 <html>
 <head>
 
-<meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
 <title>Secure Chat</title>
 
-<link rel="stylesheet"
-href="{{ url_for('static', filename='style.css') }}">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<link rel="stylesheet" href="/static/style.css">
 
-<style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
-body{
-margin:0;
-font-family:Arial;
-background:#ece5dd;
-overflow:hidden;
-}
-
-.main{
-display:flex;
-height:100vh;
-}
-
-/* SIDEBAR */
-
-.sidebar{
-width:30%;
-background:white;
-overflow-y:auto;
-border-right:1px solid #ccc;
-}
-
-.user{
-display:flex;
-align-items:center;
-padding:12px;
-cursor:pointer;
-border-bottom:1px solid #eee;
-}
-
-.user:hover{
-background:#f2f2f2;
-}
-
-.sidebar-pic{
-width:50px;
-height:50px;
-border-radius:50%;
-object-fit:cover;
-margin-right:10px;
-}
-
-.default-pic{
-width:50px;
-height:50px;
-border-radius:50%;
-background:#25d366;
-color:white;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:22px;
-margin-right:10px;
-}
-
-.username{
-font-weight:bold;
-}
-
-.chat-area{
-flex:1;
-display:flex;
-flex-direction:column;
-height:100vh;
-}
-
-/* HEADER */
-
-.chat-header{
-background:#075e54;
-color:white;
-padding:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-
-.header-left{
-display:flex;
-align-items:center;
-}
-
-.chat-profile{
-width:45px;
-height:45px;
-border-radius:50%;
-object-fit:cover;
-margin-right:10px;
-background:white;
-}
-
-.header-right{
-display:flex;
-gap:15px;
-align-items:center;
-}
-
-.header-right a{
-color:white;
-text-decoration:none;
-}
-
-/* MESSAGES */
-
-#messages{
-flex:1;
-overflow-y:auto;
-padding:10px;
-display:flex;
-flex-direction:column;
-}
-
-.mymsg,
-.othermsg{
-max-width:75%;
-padding:10px;
-margin:6px;
-border-radius:10px;
-position:relative;
-word-wrap:break-word;
-}
-
-.mymsg{
-align-self:flex-end;
-background:#dcf8c6;
-}
-
-.othermsg{
-align-self:flex-start;
-background:white;
-}
-
-.time{
-font-size:11px;
-margin-top:5px;
-text-align:right;
-color:gray;
-}
-
-/* REPLY */
-
-.reply-preview{
-background:#d9d9d9;
-padding:5px;
-border-left:4px solid #075e54;
-margin-bottom:5px;
-font-size:13px;
-border-radius:5px;
-}
-
-#replyBox{
-display:none;
-background:white;
-padding:10px;
-border-top:1px solid #ccc;
-}
-
-/* INPUT */
-
-.input-area{
-display:flex;
-padding:10px;
-background:white;
-gap:8px;
-align-items:center;
-}
-
-#msg{
-flex:1;
-padding:12px;
-border-radius:20px;
-border:1px solid #ccc;
-outline:none;
-font-size:16px;
-}
-
-.input-area button{
-padding:10px 14px;
-border:none;
-border-radius:50%;
-background:#25d366;
-color:white;
-cursor:pointer;
-font-size:18px;
-}
-
-/* IMAGE */
-
-.chat-image{
-max-width:220px;
-border-radius:10px;
-cursor:pointer;
-margin-top:5px;
-}
-
-/* MOBILE */
-
-@media(max-width:768px){
-
-.sidebar{
-width:35%;
-}
-
-#msg{
-font-size:16px;
-}
-
-.chat-image{
-max-width:160px;
-}
-
-}
-
-</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 </head>
 
@@ -239,38 +19,32 @@ max-width:160px;
 
 <div class="main">
 
-<!-- SIDEBAR -->
-
 <div class="sidebar">
 
 {% for u in users %}
-
 {% if u[0] != user %}
 
 <div class="user"
-onclick="openChat('{{u[0]}}','{{u[1]}}')">
+onclick="selectUser('{{u[0]}}')">
+
+<div class="user-left">
+
+<div class="avatar">
 
 {% if u[1] %}
-
-<img
-class="sidebar-pic"
-src="/static/profile_pics/{{u[1]}}">
-
+<img src="/static/profile_pics/{{u[1]}}">
 {% else %}
-
-<div class="default-pic">
 {{u[0][0].upper()}}
-</div>
-
 {% endif %}
+
+</div>
 
 <div>
 
-<div class="username">
-{{u[0]}}
-</div>
+<div>{{u[0]}}</div>
 
-<div id="status-{{u[0]}}">
+<div style="font-size:11px;color:gray;"
+id="status-{{u[0]}}">
 offline
 </div>
 
@@ -278,45 +52,49 @@ offline
 
 </div>
 
-{% endif %}
+</div>
 
+{% endif %}
 {% endfor %}
 
 </div>
 
-<!-- CHAT AREA -->
-
 <div class="chat-area">
-
-<!-- HEADER -->
 
 <div class="chat-header">
 
 <div class="header-left">
 
-<img
-id="chatProfile"
-class="chat-profile"
-src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+<div class="avatar">
+
+{% if mypic %}
+<img src="/static/profile_pics/{{mypic}}">
+{% else %}
+{{user[0][0].upper()}}
+{% endif %}
+
+</div>
 
 <div>
 
-<div id="chatUser">
+<div class="header-user"
+id="chat-user">
 Select User
 </div>
 
-<div id="chatStatus">
-</div>
+<div class="header-status"
+id="chat-status"></div>
 
 </div>
 
 </div>
 
-<div class="header-right">
+<div style="display:flex;gap:10px;align-items:center;">
 
-<span>📹</span>
+<button onclick="startVideoCall()">📹</button>
 
-<a href="/logout">
+<a href="/logout"
+style="color:white;text-decoration:none;">
 Logout
 </a>
 
@@ -324,51 +102,108 @@ Logout
 
 </div>
 
-<!-- MESSAGES -->
+<div id="chat-box"
+class="chat-box"></div>
 
-<div id="messages">
+<div class="bottom-area">
 
-</div>
-
-<!-- REPLY -->
-
-<div id="replyBox">
+<div class="reply-preview"
+id="reply-preview">
 
 Replying to:
-<span id="replyText"></span>
+<span id="reply-text"></span>
 
-<button onclick="cancelReply()">
+<button onclick="cancelReply()"
+style="width:28px;height:28px;font-size:12px;">
 X
 </button>
 
 </div>
 
-<!-- INPUT -->
+<div class="emoji-bar">
 
-<div class="input-area">
+<button onclick="addEmoji('😀')">😀</button>
+<button onclick="addEmoji('😂')">😂</button>
+<button onclick="addEmoji('❤️')">❤️</button>
+<button onclick="addEmoji('👍')">👍</button>
+
+</div>
+
+<div class="input">
 
 <input
 type="text"
 id="msg"
+class="message-input"
 placeholder="Type message">
 
 <input
 type="file"
-id="imageInput">
+id="file"
+class="file-input">
 
-<button onclick="addEmoji('😀')">
-😀
-</button>
+<button onclick="startRecording()">🎤</button>
 
-<button onclick="startRecording()">
-🎤
-</button>
-
-<button onclick="sendMessage()">
-➤
-</button>
+<button onclick="send()">➤</button>
 
 </div>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="menu" class="menu">
+
+<div onclick="replyMsg()">Reply</div>
+
+<div onclick="editMsg()">Edit</div>
+
+<div onclick="deleteMsg()">Delete</div>
+
+</div>
+
+<!-- IMAGE VIEWER -->
+
+<div id="imageViewer">
+
+<button onclick="closeImage()"
+class="close-image">
+✕
+</button>
+
+<img id="fullscreenImage">
+
+<a id="downloadImage"
+download
+class="download-image">
+⬇ Download Image
+</a>
+
+</div>
+
+<!-- VIDEO -->
+
+<div id="videoModal">
+
+<h2 style="color:white;margin-bottom:15px;">
+Video Call
+</h2>
+
+<video
+id="localVideo"
+autoplay
+muted
+playsinline>
+</video>
+
+<div class="video-controls">
+
+<button onclick="endVideoCall()"
+style="background:red;">
+❌
+</button>
 
 </div>
 
@@ -376,188 +211,208 @@ id="imageInput">
 
 <script>
 
-const socket = io();
+var socket = io();
 
-let currentUser = "{{user}}";
+var currentUser = "{{user}}";
 
-let currentChat = "";
+var selectedUser = "";
 
-let currentReply = "";
+var chatKey = "";
 
-socket.emit("join", {
-username: currentUser
+var currentMsgId = null;
+
+var currentMsgText = "";
+
+var replyText = "";
+
+var mediaRecorder;
+
+var audioChunks = [];
+
+var localStream;
+
+/* ENTER SEND */
+
+document.getElementById("msg")
+.addEventListener("keydown",function(e){
+
+if(e.key==="Enter"){
+
+e.preventDefault();
+
+send();
+
+}
+
 });
 
+/* EMOJI */
 
-// OPEN CHAT
+function addEmoji(e){
 
-function openChat(user,pic){
+let input=document.getElementById("msg");
 
-currentChat = user;
+input.value += e;
 
-document.getElementById(
-"chatUser"
-).innerHTML = user;
-
-
-// FIX PROFILE PIC
-
-if(pic && pic !== "None"){
-
-document.getElementById(
-"chatProfile"
-).src =
-"/static/profile_pics/" + pic;
+input.focus();
 
 }
-else{
 
-document.getElementById(
-"chatProfile"
-).src =
-"https://cdn-icons-png.flaticon.com/512/149/149071.png";
+/* SELECT USER */
 
-}
+function selectUser(user){
+
+selectedUser=user;
+
+document.getElementById("chat-user")
+.innerText=user;
+
+fetch('/get_key/'+user)
+
+.then(r=>r.json())
+
+.then(d=>{
+
+chatKey=d.key;
 
 loadMessages();
 
-}
-
-
-// LOAD MESSAGES
-
-async function loadMessages(){
-
-if(!currentChat) return;
-
-let res = await fetch(
-"/get_messages/" + currentChat
-);
-
-let data = await res.json();
-
-let box =
-document.getElementById("messages");
-
-box.innerHTML = "";
-
-data.messages.forEach(m => {
-
-let div =
-document.createElement("div");
-
-if(m[1] == currentUser){
-
-div.className = "mymsg";
-
-}
-else{
-
-div.className = "othermsg";
+});
 
 }
 
-let replyHTML = "";
+/* DECRYPT */
 
-if(m[6]){
+function decrypt(msg){
 
-replyHTML = `
-<div class="reply-preview">
-${m[6]}
+try{
+
+return CryptoJS.AES.decrypt(msg,chatKey)
+.toString(CryptoJS.enc.Utf8) || msg;
+
+}catch{
+
+return msg;
+
+}
+
+}
+
+/* LOAD */
+
+function loadMessages(){
+
+if(!selectedUser) return;
+
+fetch('/get_messages/'+selectedUser)
+
+.then(r=>r.json())
+
+.then(data=>{
+
+let box=document.getElementById("chat-box");
+
+box.innerHTML="";
+
+data.messages.forEach(m=>{
+
+let id=m[0];
+
+let sender=m[1];
+
+let msg=m[2];
+
+let status=m[3];
+
+let time=m[4];
+
+let type=m[5];
+
+let reply=m[6];
+
+let div=document.createElement("div");
+
+if(sender===currentUser){
+
+div.classList.add("message","right");
+
+}else{
+
+div.classList.add("message","left");
+
+}
+
+let html="";
+
+if(reply){
+
+html += `
+<div class="reply-box">
+${reply}
 </div>
 `;
 
 }
 
+if(type==="image"){
 
-// IMAGE
-
-if(m[5] == "image"){
-
-div.innerHTML = `
-
-${replyHTML}
+html += `
+<div class="img-wrapper">
 
 <img
-src="/static/chat_images/${m[2]}"
-class="chat-image"
-onclick="
-window.open(
-'/static/chat_images/${m[2]}'
-)
-">
-
-<br>
+class="chat-img"
+src="/static/chat_images/${msg}"
+onclick="openImage('/static/chat_images/${msg}')"
+>
 
 <a
-href="/static/chat_images/${m[2]}"
+class="download-btn"
+href="/static/chat_images/${msg}"
 download>
-Download
+⬇ Download
 </a>
 
-<div class="time">
-${m[4]}
 </div>
 `;
 
 }
+else if(type==="voice"){
 
-
-// VOICE
-
-else if(m[5] == "voice"){
-
-div.innerHTML = `
-
-${replyHTML}
-
+html += `
 <audio controls>
-<source
-src="/static/voice_notes/${m[2]}">
+<source src="/static/voice_notes/${msg}">
 </audio>
-
-<div class="time">
-${m[4]}
-</div>
 `;
 
 }
-
-
-// TEXT
-
 else{
 
-div.innerHTML = `
-
-${replyHTML}
-
-<div class="msg-text">
-${m[2]}
-</div>
-
-<div class="time">
-${m[4]}
-${m[3]=='seen'?'✓✓':'✓'}
-</div>
-`;
+html += decrypt(msg);
 
 }
 
+let tick=(status==="seen")
+? "✔✔"
+: "✔";
 
-// CLICK TO REPLY
+html += `
+<div class="time">
+${time}
+${sender===currentUser ? tick : ""}
+</div>
+`;
 
-div.onclick = function(){
+div.innerHTML=html;
 
-currentReply = m[2];
+div.oncontextmenu=(e)=>{
 
-document.getElementById(
-"replyBox"
-).style.display = "block";
+if(sender===currentUser){
 
-document.getElementById(
-"replyText"
-).innerHTML = currentReply;
+e.preventDefault();
+
+showMenu(e,id,decrypt(msg));
+
+}
 
 };
 
@@ -565,135 +420,388 @@ box.appendChild(div);
 
 });
 
-box.scrollTop = box.scrollHeight;
+box.scrollTop=box.scrollHeight;
+
+});
 
 }
 
+/* IMAGE VIEWER */
 
-// CANCEL REPLY
+function openImage(src){
+
+document.getElementById("imageViewer")
+.style.display="flex";
+
+document.getElementById("fullscreenImage")
+.src=src;
+
+document.getElementById("downloadImage")
+.href=src;
+
+}
+
+function closeImage(){
+
+document.getElementById("imageViewer")
+.style.display="none";
+
+}
+
+/* MENU */
+
+function showMenu(e,id,text){
+
+let menu=document.getElementById("menu");
+
+menu.style.display="block";
+
+menu.style.left=e.pageX+"px";
+
+menu.style.top=e.pageY+"px";
+
+currentMsgId=id;
+
+currentMsgText=text;
+
+}
+
+window.addEventListener("click",()=>{
+
+document.getElementById("menu")
+.style.display="none";
+
+});
+
+/* REPLY */
+
+function replyMsg(){
+
+replyText=currentMsgText;
+
+document.getElementById("reply-preview")
+.style.display="flex";
+
+document.getElementById("reply-preview")
+.style.justifyContent="space-between";
+
+document.getElementById("reply-preview")
+.style.alignItems="center";
+
+document.getElementById("reply-text")
+.innerText=currentMsgText;
+
+}
 
 function cancelReply(){
 
-currentReply = "";
+replyText="";
 
-document.getElementById(
-"replyBox"
-).style.display = "none";
-
-}
-
-
-// EMOJI
-
-function addEmoji(e){
-
-document.getElementById(
-"msg"
-).value += e;
+document.getElementById("reply-preview")
+.style.display="none";
 
 }
 
+/* EDIT */
 
-// SEND MESSAGE
+function editMsg(){
 
-async function sendMessage(){
+let nt=prompt(
+"Edit message:",
+currentMsgText
+);
 
-let msg =
-document.getElementById(
-"msg"
-).value;
+if(nt){
 
-let file =
-document.getElementById(
-"imageInput"
-).files[0];
+fetch('/edit_message/'+currentMsgId,{
 
+method:'POST',
 
-// IMAGE SEND
+headers:{
+'Content-Type':'application/json'
+},
+
+body:JSON.stringify({
+message:nt
+})
+
+}).then(loadMessages);
+
+}
+
+}
+
+/* DELETE */
+
+function deleteMsg(){
+
+if(confirm("Delete message?")){
+
+fetch('/delete_message/'+currentMsgId,{
+method:'POST'
+})
+
+.then(loadMessages);
+
+}
+
+}
+
+/* SEND */
+
+function send(){
+
+if(!selectedUser){
+
+alert("Select user first");
+
+return;
+
+}
+
+let msg=document.getElementById("msg").value;
+
+let file=document.getElementById("file").files[0];
 
 if(file){
 
-let fd = new FormData();
+let f=new FormData();
 
-fd.append("file", file);
+f.append("file",file);
 
-let res = await fetch(
-"/upload_image",
-{
-method:"POST",
-body:fd
-}
-);
+fetch('/upload_image',{
 
-let data = await res.json();
+method:'POST',
 
-socket.emit(
-"private_message",
-{
-to:currentChat,
-msg:data.filename,
+body:f
+
+})
+
+.then(r=>r.json())
+
+.then(d=>{
+
+socket.emit("private_message",{
+
+msg:d.filename,
+
+to:selectedUser,
+
 type:"image",
-reply:currentReply
-}
-);
+
+reply:replyText
+
+});
+
+loadMessages();
+
+});
+
+document.getElementById("file").value="";
 
 }
+else if(msg){
 
+let enc=CryptoJS.AES.encrypt(msg,chatKey)
+.toString();
 
-// TEXT SEND
+socket.emit("private_message",{
 
-else{
+msg:enc,
 
-socket.emit(
-"private_message",
-{
-to:currentChat,
-msg:msg,
+to:selectedUser,
+
 type:"text",
-reply:currentReply
-}
-);
+
+reply:replyText
+
+});
+
+loadMessages();
+
+document.getElementById("msg").value="";
 
 }
-
-
-// CLEAR INPUT
-
-document.getElementById(
-"msg"
-).value = "";
-
-document.getElementById(
-"imageInput"
-).value = "";
 
 cancelReply();
 
 }
 
+/* VOICE */
 
-// LIVE UPDATE
+async function startRecording(){
 
-socket.on("message", ()=>{
+if(!selectedUser){
 
-if(currentChat){
+alert("Select user first");
+
+return;
+
+}
+
+let stream = await navigator.mediaDevices
+.getUserMedia({audio:true});
+
+mediaRecorder = new MediaRecorder(stream);
+
+mediaRecorder.start();
+
+audioChunks=[];
+
+mediaRecorder.ondataavailable = e=>{
+
+audioChunks.push(e.data);
+
+};
+
+mediaRecorder.onstop = async ()=>{
+
+let blob = new Blob(audioChunks,{
+type:'audio/webm'
+});
+
+let fd = new FormData();
+
+fd.append("audio",blob);
+
+let r = await fetch('/upload_voice',{
+
+method:'POST',
+
+body:fd
+
+});
+
+let d = await r.json();
+
+socket.emit("private_message",{
+
+msg:d.filename,
+
+to:selectedUser,
+
+type:"voice",
+
+reply:replyText
+
+});
 
 loadMessages();
+
+};
+
+setTimeout(()=>{
+
+mediaRecorder.stop();
+
+},5000);
+
+}
+
+/* VIDEO */
+
+async function startVideoCall(){
+
+try{
+
+localStream =
+await navigator.mediaDevices.getUserMedia({
+
+video:true,
+audio:true
+
+});
+
+document.getElementById("videoModal")
+.style.display="flex";
+
+document.getElementById("localVideo")
+.srcObject = localStream;
+
+}catch(err){
+
+alert(
+"Camera or microphone denied"
+);
+
+}
+
+}
+
+function endVideoCall(){
+
+if(localStream){
+
+localStream.getTracks().forEach(track=>{
+
+track.stop();
+
+});
+
+}
+
+document.getElementById("videoModal")
+.style.display="none";
+
+}
+
+/* SOCKET */
+
+socket.on("message",loadMessages);
+
+socket.on("status",data=>{
+
+let online=data.online;
+
+let last=data.last_seen;
+
+document.querySelectorAll("[id^=status-]")
+
+.forEach(el=>{
+
+let user=el.id.replace("status-","");
+
+if(online.includes(user)){
+
+el.innerText="🟢 online";
+
+}
+else if(last[user]){
+
+el.innerText=
+"last seen "+last[user];
 
 }
 
 });
 
+if(selectedUser){
 
-// DUMMY RECORD FUNCTION
+let el=document.getElementById("chat-status");
 
-function startRecording(){
+if(online.includes(selectedUser)){
 
-alert("Voice recording already connected.");
+el.innerText="🟢 online";
 
 }
+else if(last[selectedUser]){
+
+el.innerText=
+"last seen "+last[selectedUser];
+
+}
+
+}
+
+});
+
+socket.emit("join",{
+username:currentUser
+});
 
 </script>
 
 </body>
 </html>
+
+
